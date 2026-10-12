@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ポストをつくる | ハレの日ポスト</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    .preview { position: relative; overflow: hidden; border-radius: 16px; height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 22px; }
+    .preview .bg { position: absolute; inset: 0; }
+    .preview .cap { position: absolute; top: 16px; left: 0; right: 0; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .preview .ptitle { font-weight: 700; font-size: 18px; color: var(--ink); }
+    .preview .pdate { font-size: 13px; color: var(--ink); opacity: .85; }
+    .preview .post { margin-left: 60px; }
+    .choices { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .choice .ico { height: 48px; display: flex; align-items: center; justify-content: center; }
+    .done { display: none; }
+    .linkbox { display: flex; gap: 8px; }
+    .linkbox .input { flex: 1; min-width: 0; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="logo">ハレの日ポスト</a>
+    <nav class="nav"><a href="mypage.html" class="btn">マイページ</a></nav>
+  </header>
+
+  <main class="page">
+    <section id="formArea">
+      <h1 class="page-title">ポストをつくる</h1>
+      <p class="page-lead">記念日をえらぶと、背景と開封日が変わります。</p>
+
+      <div class="preview theme-shogatsu" id="preview">
+        <div class="bg" id="pvBg"></div>
+        <div class="cap">
+          <span class="theme-badge" id="pvBadge">お正月</span>
+          <span class="ptitle" id="pvTitle">ゆうすけのポスト</span>
+          <span class="pdate" id="pvDate"></span>
+        </div>
+        <div class="post" id="pvPost">
+          <div class="deco-side"></div><div class="deco-top"></div>
+          <div class="post-roof"></div>
+          <div class="post-body"><div class="post-slot"></div><div class="post-tag">ゆうすけ</div></div>
+          <div class="deco-front"></div>
+          <div class="post-pole"></div><div class="post-base"></div>
+        </div>
+      </div>
+
+      <form class="panel" id="createForm" style="margin-top:16px" novalidate>
+        <div class="field">
+          <label>記念日<span class="req">必須</span></label>
+          <div class="choices" role="radiogroup" aria-label="記念日">
+            <button type="button" class="choice on" data-theme="shogatsu" role="radio" aria-checked="true"><span class="ico" aria-hidden="true"></span>お正月<small>1月1日</small></button>
+            <button type="button" class="choice" data-theme="birthday" role="radio" aria-checked="false"><span class="ico" aria-hidden="true"></span>誕生日<small>登録した誕生日</small></button>
+            <button type="button" class="choice" data-theme="christmas" role="radio" aria-checked="false"><span class="ico" aria-hidden="true"></span>クリスマス<small>12月25日</small></button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="openDate">開封日時<span class="req">必須</span></label>
+          <div class="row">
+            <input class="input" type="date" id="openDate">
+            <input class="input" type="time" id="openTime" value="00:00" style="max-width:120px">
+          </div>
+          <p class="muted" id="dateNote"></p>
+        </div>
+
+        <div class="field">
+          <label for="title">ポスト名<span class="req">必須</span></label>
+          <input class="input" id="title" maxlength="20" value="ゆうすけのポスト">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg btn-block">つくる</button>
+      </form>
+    </section>
+
+    <section class="done" id="doneArea">
+      <h1 class="page-title center">ポストができました！</h1>
+      <p class="page-lead center">リンクを友だちに送って、カードを集めましょう。</p>
+      <div class="panel">
+        <label class="muted" for="postUrl">ポストのリンク</label>
+        <div class="linkbox" style="margin-top:6px">
+          <input class="input" id="postUrl" value="https://harenohi-post.jp/post/x7Kp2mQ9" readonly>
+          <button type="button" class="btn btn-sm js-copy" data-url="https://harenohi-post.jp/post/x7Kp2mQ9">コピー</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
+          <a href="decorate.html?theme=shogatsu" class="btn btn-primary btn-lg btn-block" id="decoLink">ポストをかざる</a>
+          <a href="post.html?theme=shogatsu&amp;view=owner" class="btn btn-block" id="viewLink">ポストを見る</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/jquery-3.7.1.min.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/theme-art.js"></script>
+  <script>
+    var current = 'shogatsu';
+    $('.choice').each(function () { $(this).find('.ico').html(THEME_ICONS[$(this).data('theme')]); });
+
+    function changeTheme(key) {
+      current = key;
+      var t = THEMES[key];
+      $('#preview').attr('class', 'preview theme-' + key);
+      drawBackground($('#pvBg'), key);
+      drawDecos($('#pvPost'), t.decos);
+      $('#pvBadge').text(t.label);
+      $('#openDate').val(t.date).prop('disabled', t.fixed);
+      $('#openTime').val('00:00').prop('disabled', t.fixed);
+      $('#dateNote').text(t.note);
+      $('#decoLink').attr('href', 'decorate.html?theme=' + key);
+      $('#viewLink').attr('href', 'post.html?theme=' + key + '&view=owner');
+      refreshText();
+    }
+    function refreshText() {
+      var d = new Date($('#openDate').val());
+      if (!isNaN(d)) { $('#pvDate').text(d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + $('#openTime').val() + ' に開封'); }
+      $('#pvTitle').text($('#title').val() || 'ポスト名');
+    }
+
+    $('.choice').on('click', function () {
+      $('.choice').removeClass('on').attr('aria-checked', 'false');
+      $(this).addClass('on').attr('aria-checked', 'true');
+      changeTheme($(this).data('theme'));
+    });
+    $('#openDate, #openTime, #title').on('input change', refreshText);
+
+    $('#createForm').on('submit', function (e) {
+      e.preventDefault();
+      if (!$('#title').val()) { toast('ポスト名を入力してください'); return; }
+      $('#formArea').hide();
+      $('#doneArea').fadeIn(200);
+      window.scrollTo(0, 0);
+    });
+    changeTheme('shogatsu');
+  </script>
+</body>
+</html>

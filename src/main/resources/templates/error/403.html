@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('アクセスできません | ハレの日ポスト', ~{})}"></head>
+<body>
+  <header th:replace="~{fragments/header :: header}"></header>
+  <main th:replace="~{fragments/error :: error('アクセス権がありません')}"></main>
+</body>
+</html>

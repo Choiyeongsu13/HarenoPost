@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>カードを読む | ハレの日ポスト</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    .head { text-align: center; padding: 8px 0 20px; }
+    .head h1 { margin: 10px 0 4px; font-size: 26px; }
+    .head p { margin: 0; }
+    .card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .card-btn {
+      position: relative; aspect-ratio: 4 / 3; border-radius: 12px; border: none; cursor: pointer; padding: 12px;
+      display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; text-align: left;
+      font: inherit; color: #2B2622; background: #FFFFFF; box-shadow: 0 6px 16px rgba(0,0,0,.25);
+    }
+    .card-btn .band { position: absolute; left: 0; right: 0; top: 0; height: 34%; border-radius: 12px 12px 0 0; }
+    .card-btn b { font-size: 15px; }
+    .card-btn small { color: #6B635C; font-size: 12px; }
+    .unread { position: absolute; right: 10px; top: 10px; padding: 2px 8px; border-radius: 999px; background: #C8323C; color: #FFFFFF; font-size: 11px; font-weight: 700; }
+    .read .unread { display: none; }
+    .letter { border-radius: 14px; padding: 20px; min-height: 160px; white-space: pre-line; line-height: 1.9; }
+    .report-area { display: none; margin-top: 14px; }
+  </style>
+</head>
+<body class="theme-christmas">
+  <div class="stage">
+    <div class="stage-deco" id="bg" aria-hidden="true"></div>
+    <div class="stage-inner">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px">
+        <a href="index.html" class="logo" style="font-size:15px">ハレの日ポスト</a>
+        <a href="mypage.html" class="btn btn-sm" style="border-color:var(--ink);color:var(--ink)">マイページ</a>
+      </div>
+
+      <div class="head">
+        <span class="theme-badge">クリスマス</span>
+        <h1>2025年のクリスマスポスト</h1>
+        <p>開封しました！ <b id="total">0</b>通のカードがとどいています。</p>
+      </div>
+
+      <div class="card-grid" id="grid"></div>
+      <p class="muted center" style="margin-top:20px;color:var(--sub)">カードをタップすると読めます。</p>
+    </div>
+  </div>
+
+  <!-- カードを読むモーダル -->
+  <div class="modal" id="readModal" role="dialog" aria-modal="true" aria-labelledby="readFrom">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2 id="readFrom">たろう より</h2>
+        <button type="button" class="icon-btn" data-close aria-label="閉じる"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+      </div>
+      <div class="letter" id="letter"></div>
+      <p class="muted" id="sentAt" style="margin:10px 0 0"></p>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px">
+        <button type="button" class="btn btn-sm" id="reportBtn">通報する</button>
+      </div>
+      <div class="report-area" id="reportArea">
+        <label class="muted" for="reason">通報の理由</label>
+        <textarea class="input" id="reason" style="min-height:80px;margin-top:6px" placeholder="不適切な内容の理由を書いてください"></textarea>
+        <button type="button" class="btn btn-block" id="sendReport" style="margin-top:8px">通報を送る</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/jquery-3.7.1.min.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/theme-art.js"></script>
+  <script>
+    drawBackground($('#bg'), 'christmas');
+    // デモ用データ（実際は 開封日以降 + 持ち主 のときだけサーバーが返す）
+    var CARDS = [
+      { from: 'ゆい', color: '#D23C3C', at: '2025年12月10日', msg: 'メリークリスマス！\n今年もいっぱい遊んでくれてありがとう。' },
+      { from: 'けんた', color: '#2F7A55', at: '2025年12月18日', msg: '来年はみんなでスキーに行こう！' },
+      { from: 'ママ', color: '#E0B44A', at: '2025年12月20日', msg: '体に気をつけてね。\nお正月は帰ってきてね。' },
+      { from: 'りく', color: '#D23C3C', at: '2025年12月24日', msg: 'プレゼント交換、楽しみにしてる！' }
+    ];
+    $('#total').text(CARDS.length);
+    $.each(CARDS, function (i, c) {
+      var $b = $('<button type="button" class="card-btn"></button>').attr('data-i', i);
+      $b.append($('<span class="band"></span>').css('background', c.color));
+      $b.append('<span class="unread">未読</span>');
+      $b.append($('<b></b>').text(c.from));
+      $b.append($('<small></small>').text(c.at));
+      $('#grid').append($b);
+    });
+
+    $('#grid').on('click', '.card-btn', function () {
+      var c = CARDS[$(this).data('i')];
+      $('#readFrom').text(c.from + ' より');
+      $('#letter').text(c.msg).css('background', c.color + '22');
+      $('#sentAt').text(c.at + ' に投函');
+      $('#reportArea').hide(); $('#reason').val('');
+      $(this).addClass('read');   // 実際は ajax で既読処理
+      $('#readModal').addClass('open');
+    });
+    $('#reportBtn').on('click', function () { $('#reportArea').slideDown(150); });
+    $('#sendReport').on('click', function () {
+      if (!$.trim($('#reason').val())) { toast('通報の理由を入力してください'); return; }
+      $('#readModal').removeClass('open');
+      toast('通報しました。管理者が確認します');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+# 공통 설정. 비밀 정보는 환경변수 또는 application-secret.yml(git 제외)에만 둔다.
+spring:
+  application:
+    name: HarenoPost
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  config:
+    import: optional:classpath:application-secret.yml
+
+  datasource:
+    driver-class-name: oracle.jdbc.OracleDriver
+    url: ${DB_URL:}
+    username: ${DB_USERNAME:}
+    password: ${DB_PASSWORD:}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none          # 테이블은 sql/schema.sql 로 직접 만든다
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Tokyo
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
+
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 5MB
+
+server:
+  servlet:
+    session:
+      timeout: 60m
+
+app:
+  # 업로드 이미지 저장 경로(프로젝트 밖 절대경로)
+  upload-dir: ${UPLOAD_DIR:C:/harenopost/upload}
+  mail:
+    # true 이면 메일 계정이 없을 때 인증 코드를 서버 로그에만 남긴다(로컬 개발용)
+    dev-log: false

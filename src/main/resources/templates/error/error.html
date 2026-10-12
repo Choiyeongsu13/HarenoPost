@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('エラー | ハレの日ポスト', ~{})}"></head>
+<body>
+  <header th:replace="~{fragments/header :: header}"></header>
+  <!-- BusinessException 은 message, 그 밖의 오류(Spring 기본 /error)는 공통 문구 -->
+  <main th:replace="~{fragments/error :: error(${message != null and message != '' and status == null ? message : 'エラーが発生しました。しばらくしてからもう一度お試しください'})}"></main>
+</body>
+</html>

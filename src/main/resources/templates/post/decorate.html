@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('ポストをかざる | ハレの日ポスト', ~{::style})}">
+  <style>
+    body { background: #F7F4EF; color: #2B2622; }
+    .stagebox { position: relative; overflow: hidden; border-radius: 16px; height: 400px; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; }
+    .stagebox .bg { position: absolute; inset: 0; }
+    .stagebox .post { margin-left: 60px; }
+    .stagebox .theme-badge { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); }
+    .group-title { font-weight: 700; font-size: 14px; margin: 0 0 10px; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a th:href="@{/}" class="logo">ハレの日ポスト</a>
+    <nav class="nav"><a th:href="@{/post/{code}(code=${post.code})}" class="btn">ポストにもどる</a></nav>
+  </header>
+
+  <main class="page">
+    <h1 class="page-title">ポストをかざる</h1>
+    <p class="page-lead">ポストは赤で固定です。記念日のかざりをえらぶと、すぐにプレビューが変わります。</p>
+
+    <div class="stagebox" th:classappend="|theme-${post.theme.key}|" id="stage">
+      <div class="bg" id="bg"></div>
+      <span class="theme-badge" th:text="${post.theme.label}"></span>
+      <div class="post" id="post" aria-label="プレビュー">
+        <div class="deco-side"></div><div class="deco-top"></div>
+        <div class="post-roof"></div>
+        <div class="post-body"><div class="post-slot"></div><div class="post-tag" id="tag" th:text="${post.nameTag != null ? post.nameTag : '　'}"></div></div>
+        <div class="deco-front"></div>
+        <div class="post-pole"></div><div class="post-base"></div>
+      </div>
+    </div>
+
+    <form class="panel" id="decoForm" style="margin-top:16px" novalidate>
+      <p class="group-title">かざり（いくつでもえらべます）</p>
+      <div class="deco-picks" id="picks"></div>
+
+      <div class="field" style="margin:22px 0 24px">
+        <label for="nameTag">名札（最大8文字）</label>
+        <input class="input" id="nameTag" maxlength="8" th:value="${post.nameTag}">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg btn-block" style="background:#C8323C;border-color:#C8323C;color:#fff">保存する</button>
+    </form>
+  </main>
+
+  <script th:src="@{/js/theme-art.js}"></script>
+  <script th:inline="javascript">
+    var code = /*[[${post.code}]]*/ '';
+    var key = /*[[${post.theme.key}]]*/ 'shogatsu';
+    var selected = /*[[${post.decoCodes}]]*/ [];
+    var SLOT = { top: '屋根の上', front: 'ポストの前', side: 'ポストの横' };
+
+    drawBackground($('#bg'), key);
+    $.each(THEMES[key].decos, function (_, c) {
+      var d = DECOS[c], on = selected.indexOf(c) >= 0;
+      $('<button type="button" class="deco-pick"></button>')
+        .attr({ 'data-code': c, 'aria-pressed': on })
+        .toggleClass('on', on)
+        .append($('<span class="ico"></span>').html(d.svg))
+        .append($('<b></b>').text(d.name))
+        .append($('<span class="slot"></span>').text(SLOT[d.slot]))
+        .appendTo('#picks');
+    });
+    drawDecos($('#post'), selected);
+
+    $('#picks').on('click', '.deco-pick', function () {
+      var c = $(this).data('code');
+      var i = selected.indexOf(c);
+      if (i >= 0) { selected.splice(i, 1); } else { selected.push(c); }
+      $(this).toggleClass('on', i < 0).attr('aria-pressed', i < 0);
+      drawDecos($('#post'), selected);
+    });
+    $('#nameTag').on('input', function () { $('#tag').text($(this).val() || '　'); });
+
+    $('#decoForm').on('submit', function (e) {
+      e.preventDefault();
+      $.ajax({
+        url: '/api/posts/' + encodeURIComponent(code) + '/decorate',
+        type: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ decos: selected, nameTag: $.trim($('#nameTag').val()) })
+      }).done(function (res) { toast(res.message); })
+        .fail(apiError);
+    });
+  </script>
+</body>
+</html>

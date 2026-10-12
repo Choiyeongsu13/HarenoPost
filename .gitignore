@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### 비밀 정보 (DB 비밀번호, 메일 계정) ###
+application-secret.yml

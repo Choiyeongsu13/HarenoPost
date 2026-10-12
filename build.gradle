@@ -21,6 +21,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	compileOnly 'org.projectlombok:lombok'
@@ -38,4 +40,12 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// 모든 시각은 일본 시간(JST)
+tasks.named('bootRun') {
+	jvmArgs '-Duser.timezone=Asia/Tokyo'
+}
+tasks.named('test') {
+	jvmArgs '-Duser.timezone=Asia/Tokyo'
 }

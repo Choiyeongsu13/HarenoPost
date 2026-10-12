@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ハレの日ポスト</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    .hero { min-height: calc(100vh - 140px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px; padding: 24px 20px 40px; }
+    .halo { position: relative; width: 320px; height: 360px; display: flex; align-items: flex-end; justify-content: center; }
+    .halo::before { content: ""; position: absolute; left: 10px; top: 0; width: 300px; height: 300px; border-radius: 50%; background: #EDE6DA; }
+    .hero p { margin: 0; font-size: 18px; }
+    .foot { text-align: center; padding: 0 20px 24px; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="logo">ハレの日ポスト</a>
+    <nav class="nav">
+      <a href="login.html" class="btn">ログイン</a>
+    </nav>
+  </header>
+
+  <main class="hero">
+    <div class="halo" aria-hidden="true">
+      <div class="post post-lg">
+        <div class="post-roof"></div>
+        <div class="post-body">
+          <div class="post-slot"></div>
+          <div class="post-tag">
+            <svg width="26" height="18" viewBox="0 0 30 22" fill="none" stroke="#C8323C" stroke-width="2.4" stroke-linejoin="round"><rect x="1.5" y="1.5" width="27" height="19" rx="2.5"></rect><path d="M2.5 3 L15 12 L27.5 3"></path></svg>
+          </div>
+        </div>
+        <div class="post-pole"></div>
+        <div class="post-base"></div>
+      </div>
+    </div>
+    <div class="center" style="display:flex;flex-direction:column;align-items:center;gap:18px">
+      <p>メッセージをあつめて、ハレの日にひらこう。</p>
+      <a href="create.html" class="btn btn-primary btn-lg">ポストをつくる</a>
+    </div>
+  </main>
+
+  <footer class="foot"><a href="screens.html" class="muted">画面一覧（発表用）</a></footer>
+</body>
+</html>

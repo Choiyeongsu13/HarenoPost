@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>マイページ | ハレの日ポスト</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="logo">ハレの日ポスト</a>
+    <nav class="nav">
+      <a href="mypage.html" class="btn">マイページ</a>
+      <a href="index.html" class="btn">ログアウト</a>
+    </nav>
+  </header>
+
+  <main class="page-wide">
+    <h1 class="page-title">マイページ</h1>
+    <p class="page-lead">ようこそ、ゆうすけさん。</p>
+
+    <section class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <h2 style="margin:0">プロフィール</h2>
+        <button type="button" class="btn btn-sm" onclick="toast('プロフィール編集画面（準備中）')">プロフィール編集</button>
+      </div>
+      <dl class="profile" style="margin-top:16px">
+        <dt>ニックネーム</dt><dd>ゆうすけ</dd>
+        <dt>ID</dt><dd>yusuke01</dd>
+        <dt>メール</dt><dd>yusuke@example.com</dd>
+        <dt>誕生日</dt><dd>11月20日</dd>
+        <dt>登録日</dt><dd>2026年10月12日</dd>
+      </dl>
+      <div class="stats">
+        <div><b>4</b><span class="muted">つくったポスト</span></div>
+        <div><b>19</b><span class="muted">もらったカード</span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <h2 style="margin:0">わたしのポスト</h2>
+        <a href="create.html" class="btn btn-primary btn-sm">ポストをつくる</a>
+      </div>
+      <ul class="post-list">
+        <li>
+          <a class="post-item" href="post.html?theme=shogatsu&amp;view=owner">
+            <span class="mini" style="background:#E9473F"></span>
+            <span class="info"><b>ゆうすけのポスト</b><span class="muted">お正月 ・ 2027年1月1日 0:00 開封 ・ 6通</span></span>
+            <span class="status wait">受付中</span>
+          </a>
+        </li>
+        <li>
+          <a class="post-item" href="post.html?theme=birthday&amp;view=owner">
+            <span class="mini" style="background:#E0567A"></span>
+            <span class="info"><b>ゆうすけの誕生日ポスト</b><span class="muted">誕生日 ・ 2026年11月20日 0:00 開封 ・ 5通</span></span>
+            <span class="status wait">受付中</span>
+          </a>
+        </li>
+        <li>
+          <a class="post-item" href="post.html?theme=christmas&amp;view=owner">
+            <span class="mini" style="background:#1E4A3A"></span>
+            <span class="info"><b>みんなのクリスマスポスト</b><span class="muted">クリスマス ・ 2026年12月25日 0:00 開封 ・ 4通</span></span>
+            <span class="status wait">受付中</span>
+          </a>
+        </li>
+        <li>
+          <a class="post-item" href="cards.html">
+            <span class="mini" style="background:#1E4A3A"></span>
+            <span class="info"><b>2025年のクリスマスポスト</b><span class="muted">クリスマス ・ 2025年12月25日 0:00 開封 ・ 4通</span></span>
+            <span class="status open">開封済み</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+  </main>
+
+  <script src="js/jquery-3.7.1.min.js"></script>
+  <script src="js/common.js"></script>
+</body>
+</html>

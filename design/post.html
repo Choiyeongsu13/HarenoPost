@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ポスト | ハレの日ポスト</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 0 0; }
+    .topbar .logo { font-size: 15px; }
+    .share { border: 1.5px solid var(--ink); color: var(--ink); }
+    .titles { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 8px; text-align: center; }
+    .titles h1 { margin: 4px 0 0; font-size: 26px; }
+    .titles p { margin: 0; font-size: 14px; }
+    .mailbox-area .post { margin-left: 60px; }
+    .actions { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; }
+    .count { margin: 0; text-align: center; font-size: 14px; }
+    .owner-only, .visitor-only { display: none; }
+    .is-owner .owner-only, .is-visitor .visitor-only { display: flex; }
+    .counter { text-align: right; }
+  </style>
+</head>
+<body class="theme-shogatsu is-visitor">
+  <div class="stage">
+    <div class="stage-deco" id="bg" aria-hidden="true"></div>
+
+    <div class="stage-inner">
+      <div class="topbar">
+        <a href="index.html" class="logo">ハレの日ポスト</a>
+        <button type="button" class="icon-btn share js-copy" aria-label="リンクをシェア">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"></path></svg>
+        </button>
+      </div>
+
+      <div class="titles">
+        <span class="theme-badge" id="badge"></span>
+        <h1 id="title"></h1>
+        <p id="openLabel"></p>
+      </div>
+
+      <div class="countdown" id="countdown">
+        <div><b class="d">0</b><span>日</span></div>
+        <div><b class="h">00</b><span>時間</span></div>
+        <div><b class="m">00</b><span>分</span></div>
+      </div>
+
+      <div class="mailbox-area" id="mailbox">
+        <div class="post" id="post">
+          <div class="deco-side"></div><div class="deco-top"></div>
+          <div class="post-roof"></div>
+          <div class="post-body"><div class="post-slot"></div><div class="post-tag" id="tag"></div></div>
+          <div class="deco-front"></div>
+          <div class="post-pole"></div><div class="post-base"></div>
+        </div>
+      </div>
+
+      <p class="count">カードが <b id="cnt">0</b>通 とどいています</p>
+
+      <div class="actions visitor-only">
+        <button type="button" class="btn btn-primary btn-lg btn-block" data-open="writeModal">カードを書く</button>
+        <button type="button" class="btn btn-block js-copy">リンクをコピー</button>
+      </div>
+      <div class="actions owner-only">
+        <button type="button" class="btn btn-primary btn-lg btn-block js-copy">リンクをコピー</button>
+        <div class="row">
+          <a href="#" class="btn" style="flex:1" id="decoLink">かざる</a>
+          <button type="button" class="btn" style="flex:1" onclick="toast('設定画面（準備中）')">設定</button>
+        </div>
+        <p class="muted center" style="margin:4px 0 0;color:var(--sub)">開封日になると「カードを読む」ボタンがあらわれます。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="writeModal" role="dialog" aria-modal="true" aria-labelledby="writeTitle">
+    <form class="modal-box" id="writeForm" novalidate>
+      <div class="modal-head">
+        <h2 id="writeTitle">カードを書く</h2>
+        <button type="button" class="icon-btn" data-close aria-label="閉じる"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+      </div>
+      <div class="field">
+        <label>カードのデザイン</label>
+        <div class="designs" id="designs"></div>
+      </div>
+      <div class="field">
+        <label for="sender">ニックネーム<span class="req">必須</span></label>
+        <input class="input" id="sender" maxlength="20" placeholder="例）たろう">
+      </div>
+      <div class="field">
+        <label for="message">メッセージ<span class="req">必須</span></label>
+        <textarea class="input" id="message" maxlength="300" placeholder="開封日まで、ポストの持ち主にも見えません"></textarea>
+        <span class="muted counter"><span id="len">0</span> / 300</span>
+      </div>
+      <button type="submit" class="btn btn-lg btn-block" style="background:#C8323C;border-color:#C8323C;color:#fff;font-weight:700">投函する</button>
+    </form>
+  </div>
+
+  <script src="js/jquery-3.7.1.min.js"></script>
+  <script src="js/theme-art.js"></script>
+  <script>
+    // URL: post.html?theme=shogatsu|birthday|christmas&view=owner
+    var params = new URLSearchParams(location.search);
+    var DEMO = {
+      shogatsu:  { title: 'ゆうすけのポスト', open: '2027-01-01T00:00:00+09:00', label: '2027年1月1日 0:00 に開封', tag: 'ゆうすけ',
+        cards: [['たろう', '#C8102E'], ['さくら', '#B8892D'], ['けんた', '#B8892D'], ['みお', '#C8102E'], ['りく', '#C8102E'], ['あおい', '#B8892D']],
+        designs: ['#C8102E', '#F3E3C8', '#B8892D', '#2B1D14'] },
+      birthday:  { title: 'ゆうすけの誕生日ポスト', open: '2026-11-20T00:00:00+09:00', label: '2026年11月20日 0:00 に開封', tag: 'Happy',
+        cards: [['なつみ', '#E0567A'], ['しょう', '#3E8FB0'], ['先輩', '#F2B544'], ['ゼミのみんな', '#E0567A'], ['ゆい', '#3E8FB0']],
+        designs: ['#E0567A', '#3E8FB0', '#F2B544', '#FBDDE3'] },
+      christmas: { title: 'みんなのクリスマスポスト', open: '2026-12-25T00:00:00+09:00', label: '2026年12月25日 0:00 に開封', tag: 'Merry',
+        cards: [['ゆい', '#D23C3C'], ['けんた', '#2F7A55'], ['ママ', '#E0B44A'], ['りく', '#D23C3C']],
+        designs: ['#D23C3C', '#2F7A55', '#E0B44A', '#F4F1E6'] }
+    };
+    var key = DEMO[params.get('theme')] ? params.get('theme') : 'shogatsu';
+    var c = DEMO[key], t = THEMES[key];
+    var owner = params.get('view') === 'owner';
+
+    $('body').attr('class', 'theme-' + key + (owner ? ' is-owner' : ' is-visitor'));
+    drawBackground($('#bg'), key);
+    drawDecos($('#post'), t.decos);
+    $('#badge').text(t.label);
+    $('#title').text(c.title);
+    $('#openLabel').text(c.label);
+    $('#tag').text(c.tag);
+    $('#countdown').attr('data-open-at', c.open);
+    $('#decoLink').attr('href', 'decorate.html?theme=' + key);
+  </script>
+  <script src="js/common.js"></script>
+  <script>
+    // 封筒の位置（ポストのまわり）
+    var SPOTS = [[4, 4, -10], [70, 0, 9], [70, 36, -7], [2, 40, 6], [38, 0, -3], [72, 66, 5], [8, 70, 4]];
+    function addEnvelope(name, stamp, i, isNew) {
+      var s = SPOTS[i % SPOTS.length];
+      $('<div class="envelope" aria-hidden="true"></div>').text(name)
+        .css({ left: s[0] + '%', top: s[1] + '%', transform: 'rotate(' + s[2] + 'deg)', '--stamp': stamp })
+        .toggleClass('new', !!isNew).appendTo('#mailbox');
+    }
+    $.each(c.cards, function (i, card) { addEnvelope(card[0], card[1], i); });
+    $('#cnt').text(c.cards.length);
+
+    $.each(c.designs, function (i, col) {
+      $('<button type="button" class="design"></button>').attr('aria-label', 'デザイン' + (i + 1)).css('background', col).toggleClass('on', i === 0).appendTo('#designs');
+    });
+    $('#designs').on('click', '.design', function () { $('.design').removeClass('on'); $(this).addClass('on'); });
+    $('#message').on('input', function () { $('#len').text($(this).val().length); });
+
+    var lastSent = 0;
+    $('#writeForm').on('submit', function (e) {
+      e.preventDefault();
+      var name = $.trim($('#sender').val()), msg = $.trim($('#message').val());
+      if (!name || !msg) { toast('ニックネームとメッセージを入力してください'); return; }
+      if (Date.now() - lastSent < 60000) { toast('しばらくしてから送ってください'); return; }
+      lastSent = Date.now();
+      var n = Number($('#cnt').text());
+      addEnvelope(name, $('.design.on').css('background-color'), n, true);
+      $('#cnt').text(n + 1);
+      $('#writeModal').removeClass('open');
+      this.reset(); $('#len').text(0);
+      toast('カードを投函しました');
+    });
+  </script>
+</body>
+</html>

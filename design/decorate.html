@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ポストをかざる | ハレの日ポスト</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    body { background: #F7F4EF; color: #2B2622; }
+    .stagebox { position: relative; overflow: hidden; border-radius: 16px; height: 400px; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; }
+    .stagebox .bg { position: absolute; inset: 0; }
+    .stagebox .post { margin-left: 60px; }
+    .stagebox .theme-badge { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); }
+    .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .group-title { font-weight: 700; font-size: 14px; margin: 0 0 10px; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="logo">ハレの日ポスト</a>
+    <nav class="nav"><a href="#" class="btn" id="backLink">ポストにもどる</a></nav>
+  </header>
+
+  <main class="page">
+    <h1 class="page-title">ポストをかざる</h1>
+    <p class="page-lead">ポストは赤で固定です。記念日のかざりをえらぶと、すぐにプレビューが変わります。</p>
+
+    <div class="tabs" role="group" aria-label="デモ用：記念日の切り替え" id="tabs">
+      <button type="button" class="chip" data-theme="shogatsu">お正月</button>
+      <button type="button" class="chip" data-theme="birthday">誕生日</button>
+      <button type="button" class="chip" data-theme="christmas">クリスマス</button>
+    </div>
+
+    <div class="stagebox" id="stage">
+      <div class="bg" id="bg"></div>
+      <span class="theme-badge" id="badge"></span>
+      <div class="post" id="post" aria-label="プレビュー">
+        <div class="deco-side"></div><div class="deco-top"></div>
+        <div class="post-roof"></div>
+        <div class="post-body"><div class="post-slot"></div><div class="post-tag" id="tag">ゆうすけ</div></div>
+        <div class="deco-front"></div>
+        <div class="post-pole"></div><div class="post-base"></div>
+      </div>
+    </div>
+
+    <form class="panel" id="decoForm" style="margin-top:16px" novalidate>
+      <p class="group-title">かざり（いくつでもえらべます）</p>
+      <div class="deco-picks" id="picks"></div>
+
+      <div class="field" style="margin:22px 0 24px">
+        <label for="nameTag">名札（最大8文字）</label>
+        <input class="input" id="nameTag" maxlength="8" value="ゆうすけ">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg btn-block" style="background:#C8323C;border-color:#C8323C;color:#fff">保存する</button>
+    </form>
+  </main>
+
+  <script src="js/jquery-3.7.1.min.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/theme-art.js"></script>
+  <script>
+    var SLOT = { top: '屋根の上', front: 'ポストの前', side: 'ポストの横' };
+    var key = THEMES[new URLSearchParams(location.search).get('theme')] ? new URLSearchParams(location.search).get('theme') : 'shogatsu';
+    var selected = [];
+
+    function load(k) {
+      key = k;
+      var t = THEMES[k];
+      selected = t.decos.slice(0, 1);          // 最初は1つだけ付けておく
+      $('#tabs .chip').removeClass('on').filter('[data-theme="' + k + '"]').addClass('on');
+      $('#stage').attr('class', 'stagebox theme-' + k);
+      drawBackground($('#bg'), k);
+      $('#badge').text(t.label);
+      $('#backLink').attr('href', 'post.html?theme=' + k + '&view=owner');
+      $('#picks').empty();
+      $.each(t.decos, function (_, code) {
+        var d = DECOS[code];
+        $('<button type="button" class="deco-pick"></button>')
+          .attr({ 'data-code': code, 'aria-pressed': selected.indexOf(code) >= 0 })
+          .toggleClass('on', selected.indexOf(code) >= 0)
+          .append($('<span class="ico"></span>').html(d.svg))
+          .append($('<b></b>').text(d.name))
+          .append($('<span class="slot"></span>').text(SLOT[d.slot]))
+          .appendTo('#picks');
+      });
+      drawDecos($('#post'), selected);
+    }
+
+    $('#picks').on('click', '.deco-pick', function () {
+      var code = $(this).data('code');
+      var i = selected.indexOf(code);
+      if (i >= 0) { selected.splice(i, 1); } else { selected.push(code); }
+      $(this).toggleClass('on', i < 0).attr('aria-pressed', i < 0);
+      drawDecos($('#post'), selected);
+    });
+    $('#tabs').on('click', '.chip', function () { load($(this).data('theme')); });
+    $('#nameTag').on('input', function () { $('#tag').text($(this).val() || '　'); });
+
+    $('#decoForm').on('submit', function (e) {
+      e.preventDefault();
+      // 実際は ajax POST /api/post/{code}/decorate （選んだかざりのコードと名札を保存）
+      toast('保存しました');
+    });
+    load(key);
+  </script>
+</body>
+</html>

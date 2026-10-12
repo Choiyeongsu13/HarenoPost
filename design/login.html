@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ログイン | ハレの日ポスト</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="logo">ハレの日ポスト</a>
+  </header>
+
+  <main class="page">
+    <h1 class="page-title center">ログイン</h1>
+    <p class="page-lead center">ポストをつくるにはログインしてください。</p>
+
+    <form class="panel" id="loginForm" action="mypage.html" method="get" novalidate>
+      <div class="field">
+        <label for="userid">ID</label>
+        <input class="input" id="userid" name="userid" autocomplete="username" placeholder="例）yusuke01">
+      </div>
+      <div class="field">
+        <label for="passwd">パスワード</label>
+        <input class="input" type="password" id="passwd" name="passwd" autocomplete="current-password">
+      </div>
+      <p class="msg err" id="loginMsg" role="alert"></p>
+      <button type="submit" class="btn btn-primary btn-lg btn-block">ログイン</button>
+
+      <div class="divider">はじめての方</div>
+      <a href="signup.html" class="btn btn-block">新規登録</a>
+    </form>
+  </main>
+
+  <script src="js/jquery-3.7.1.min.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    // デモ：空欄なら失敗メッセージ、入力があればマイページへ
+    $('#loginForm').on('submit', function (e) {
+      if (!$('#userid').val() || !$('#passwd').val()) {
+        e.preventDefault();
+        $('#loginMsg').text('IDまたはパスワードが違います');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>新規登録 | ハレの日ポスト</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="logo">ハレの日ポスト</a>
+    <nav class="nav"><a href="login.html" class="btn">ログイン</a></nav>
+  </header>
+
+  <main class="page">
+    <h1 class="page-title center">新規登録</h1>
+    <p class="page-lead center">メール認証をして、アカウントをつくりましょう。</p>
+
+    <form class="panel" id="signupForm" novalidate>
+      <div class="field">
+        <label for="userid">ID<span class="req">必須</span></label>
+        <div class="row">
+          <input class="input" id="userid" placeholder="英小文字・数字 4〜20文字">
+          <button type="button" class="btn btn-sm" id="checkId">重複確認</button>
+        </div>
+        <p class="msg" id="idMsg"></p>
+      </div>
+
+      <div class="field">
+        <label for="pw">パスワード<span class="req">必須</span></label>
+        <input class="input" type="password" id="pw" placeholder="英字と数字を含む 8〜20文字" autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label for="pw2">パスワード（確認）<span class="req">必須</span></label>
+        <input class="input" type="password" id="pw2" autocomplete="new-password">
+        <p class="msg" id="pwMsg"></p>
+      </div>
+
+      <div class="field">
+        <label for="nick">ニックネーム<span class="req">必須</span></label>
+        <input class="input" id="nick" maxlength="10" placeholder="ポスト名「〇〇のポスト」に使われます">
+      </div>
+
+      <div class="field">
+        <label for="email">メールアドレス<span class="req">必須</span></label>
+        <div class="row">
+          <input class="input" type="email" id="email" placeholder="example@mail.com">
+          <button type="button" class="btn btn-sm" id="sendCode">認証コード送信</button>
+        </div>
+        <div class="row" id="codeRow" style="display:none;margin-top:8px">
+          <input class="input" id="code" maxlength="6" inputmode="numeric" placeholder="6桁のコード">
+          <button type="button" class="btn btn-sm" id="verify">確認</button>
+        </div>
+        <p class="msg" id="mailMsg"></p>
+      </div>
+
+      <div class="field">
+        <label for="birthday">誕生日<span class="muted">（任意）</span></label>
+        <input class="input" type="date" id="birthday">
+        <p class="muted">誕生日ポストの開封日に使われます。</p>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg btn-block" id="submitBtn" disabled>登録する</button>
+      <p class="muted center" style="margin-top:12px">ID確認とメール認証を終えると登録できます。</p>
+    </form>
+  </main>
+
+  <script src="js/jquery-3.7.1.min.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    // ※発表用デモ：実際はajaxでサーバーに確認します
+    var idOk = false, mailOk = false;
+    function refresh() { $('#submitBtn').prop('disabled', !(idOk && mailOk)); }
+
+    $('#checkId').on('click', function () {
+      var id = $('#userid').val();
+      if (!/^[a-z0-9]{4,20}$/.test(id)) { idOk = false; $('#idMsg').attr('class', 'msg err').text('英小文字・数字 4〜20文字で入力してください'); }
+      else if (id === 'admin') { idOk = false; $('#idMsg').attr('class', 'msg err').text('このIDはすでに使われています'); }
+      else { idOk = true; $('#idMsg').attr('class', 'msg ok').text('使用できるIDです'); }
+      refresh();
+    });
+    $('#userid').on('input', function () { idOk = false; $('#idMsg').text(''); refresh(); });
+
+    $('#pw, #pw2').on('input', function () {
+      if (!$('#pw2').val()) { $('#pwMsg').text(''); return; }
+      var same = $('#pw').val() === $('#pw2').val();
+      $('#pwMsg').attr('class', same ? 'msg ok' : 'msg err').text(same ? 'パスワードが一致しました' : 'パスワードが一致しません');
+    });
+
+    $('#sendCode').on('click', function () {
+      if (!$('#email')[0].checkValidity() || !$('#email').val()) { $('#mailMsg').attr('class', 'msg err').text('メールアドレスの形式を確認してください'); return; }
+      $('#codeRow').show();
+      $('#mailMsg').attr('class', 'msg ok').text('認証コードを送信しました（5分間有効）※デモ用コード：123456');
+    });
+    $('#verify').on('click', function () {
+      if ($('#code').val() === '123456') { mailOk = true; $('#mailMsg').attr('class', 'msg ok').text('メール認証が完了しました'); }
+      else { mailOk = false; $('#mailMsg').attr('class', 'msg err').text('認証コードが正しくないか、期限切れです'); }
+      refresh();
+    });
+
+    $('#signupForm').on('submit', function (e) {
+      e.preventDefault();
+      toast('登録が完了しました');
+      setTimeout(function () { location.href = 'login.html'; }, 900);
+    });
+  </script>
+</body>
+</html>

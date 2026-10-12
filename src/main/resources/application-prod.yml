@@ -1,0 +1,7 @@
+# EC2 배포용. 값은 모두 환경변수로 넣는다.
+spring:
+  thymeleaf:
+    cache: true
+
+app:
+  upload-dir: ${UPLOAD_DIR:/home/ec2-user/harenopost/upload}
