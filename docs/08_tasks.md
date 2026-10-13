@@ -10,7 +10,7 @@
 - 완료 기준: 앱이 뜨고 `/` 에 시안과 같은 메인 화면이 보인다. DB 연결 오류 없음
 
 ## 10/13 (화) 엔티티 · Security 기본
-- [ ] Member, Post, Card, Design, Report 엔티티 + Repository, `Theme`, `Deco` enum
+- [ ] User, Post, Card, Design, Report 엔티티 + Repository, `Theme`, `Deco` enum
 - [ ] `SecurityConfig`, `UserDetailsService`, `BCryptPasswordEncoder`, 로그인 화면
 - [ ] `ApiResponse`, `ErrorCode`, `BusinessException`, `GlobalExceptionHandler`
 - 완료 기준: `ddl-auto: validate` 로 기동 성공. 관리자 계정(BCrypt 값 넣은 것)으로 로그인/로그아웃 된다

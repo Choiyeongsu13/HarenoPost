@@ -7,10 +7,10 @@
 | URL | 권한 | 템플릿 | 설명 |
 |---|---|---|---|
 | `/` | ALL | index | 메인(가운데 우체통) |
-| `/login` | ALL | member/login | `?error`, `?joined`, `?logout` 메시지 |
-| `/signup` | ALL | member/signup | |
-| `/mypage` | USER | member/mypage | |
-| `/mypage/edit` | USER | member/edit | |
+| `/login` | ALL | user/login | `?error`, `?joined`, `?logout` 메시지 |
+| `/signup` | ALL | user/signup | |
+| `/mypage` | USER | user/mypage | |
+| `/mypage/edit` | USER | user/edit | |
 | `/post/new` | USER | post/create | |
 | `/post/{code}/created` | OWNER | post/created | 완료 화면(링크 복사) |
 | `/post/{code}` | ALL | post/view | 주인이면 버튼 추가. 본문 없음 |
@@ -42,7 +42,7 @@
 
 | 메서드 URL | 권한 | 요청 | 성공 data |
 |---|---|---|---|
-| `GET /api/members/check-id?userid=` | ALL | | `{available: true}` |
+| `GET /api/users/check-id?userid=` | ALL | | `{available: true}` |
 | `POST /api/mail/send` | ALL | `{email}` | null |
 | `POST /api/mail/verify` | ALL | `{email, code}` | null |
 | `PUT /api/posts/{code}/decorate` | OWNER | `{decos: ["KAGAMI","KADOMATSU"], nameTag}` | `{decos, nameTag}` |
@@ -70,13 +70,14 @@ public record ApiResponse<T>(boolean success, String code, String message, T dat
 }
 ```
 
-`BusinessException(ErrorCode)` 를 던지고 `GlobalExceptionHandler` 가 `/api/**` 요청이면 JSON, 화면 요청이면 에러 페이지(`error/403`, `error/404`)로 바꾼다.
+`BusinessException(ErrorCode)` 를 던지고 `GlobalExceptionHandler` 가 `/api/**` 요청이면 JSON, 화면 요청이면 **에러 팝업**(`error/403`, `error/404`, `error/error` → `fragments/error :: popup`, 「OK」 로 이전 화면)으로 바꾼다. 그 밖의 예외도 같은 방식(500)으로 처리한다.
 
 ### ErrorCode
 
 | 코드 | HTTP | 메시지 |
 |---|---|---|
 | `INVALID_INPUT` | 400 | (검증 메시지) |
+| `INTERNAL_ERROR` | 500 | エラーが発生しました。しばらくしてからもう一度お試しください (예상 못 한 예외, 내부 메시지는 로그에만) |
 | `DUPLICATE_USERID` | 409 | このIDはすでに使われています |
 | `DUPLICATE_EMAIL` | 409 | このメールアドレスはすでに登録されています |
 | `MAIL_SEND_FAILED` | 500 | メールを送信できませんでした |
@@ -100,7 +101,7 @@ public record ApiResponse<T>(boolean success, String code, String message, T dat
 http
   .authorizeHttpRequests(a -> a
       .requestMatchers("/", "/login", "/signup", "/post/*", "/css/**", "/js/**", "/img/**", "/upload/**", "/error/**").permitAll()
-      .requestMatchers("/api/members/check-id", "/api/mail/**").permitAll()
+      .requestMatchers("/api/users/check-id", "/api/mail/**").permitAll()
       .requestMatchers(HttpMethod.GET, "/api/posts/*/designs").permitAll()
       .requestMatchers(HttpMethod.POST, "/api/posts/*/cards").permitAll()
       .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")

@@ -3,6 +3,6 @@
 <head th:replace="~{fragments/head :: head('アクセスできません | ハレの日ポスト', ~{})}"></head>
 <body>
   <header th:replace="~{fragments/header :: header}"></header>
-  <main th:replace="~{fragments/error :: error('アクセス権がありません')}"></main>
+  <th:block th:replace="~{fragments/error :: popup('アクセス権がありません')}"></th:block>
 </body>
 </html>

@@ -31,21 +31,21 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.harenopost.card.CardService;
-import com.harenopost.card.dto.EnvelopeDto;
-import com.harenopost.common.BusinessException;
-import com.harenopost.common.ErrorCode;
 import com.harenopost.config.LoginSuccessHandler;
 import com.harenopost.config.SecurityConfig;
-import com.harenopost.mail.MailAuthService;
-import com.harenopost.member.CustomUserDetails;
-import com.harenopost.member.Member;
-import com.harenopost.member.MemberRepository;
-import com.harenopost.member.MemberService;
-import com.harenopost.post.Post;
-import com.harenopost.post.PostService;
-import com.harenopost.post.Theme;
-import com.harenopost.post.dto.MyPostDto;
+import com.harenopost.dto.CustomUserDetails;
+import com.harenopost.dto.EnvelopeDto;
+import com.harenopost.dto.MyPostDto;
+import com.harenopost.entity.User;
+import com.harenopost.entity.Post;
+import com.harenopost.entity.Theme;
+import com.harenopost.exception.BusinessException;
+import com.harenopost.exception.ErrorCode;
+import com.harenopost.repository.UserRepository;
+import com.harenopost.service.CardService;
+import com.harenopost.service.MailAuthService;
+import com.harenopost.service.UserService;
+import com.harenopost.service.PostService;
 
 /**
  * DB 없이 화면(Thymeleaf)과 보안 설정을 확인한다. 서비스는 가짜(mock).
@@ -58,7 +58,7 @@ class WebPageTest {
 	MockMvc mvc;
 
 	@MockitoBean
-	MemberService memberService;
+	UserService userService;
 	@MockitoBean
 	PostService postService;
 	@MockitoBean
@@ -66,28 +66,28 @@ class WebPageTest {
 	@MockitoBean
 	MailAuthService mailAuthService;
 	@MockitoBean
-	MemberRepository memberRepository;
+	UserRepository userRepository;
 
-	Member owner;
+	User owner;
 	CustomUserDetails ownerUser;
 	CustomUserDetails otherUser;
 	Post post;
 
 	@BeforeEach
 	void setUp() throws Exception {
-		owner = Member.create("yusuke01", "{noop}x", "ゆうすけ", "y@example.com", LocalDate.of(2000, 11, 20));
-		setField(owner, "memberIdx", 1L);
+		owner = User.create("yusuke01", "{noop}x", "ゆうすけ", "y@example.com", LocalDate.of(2000, 11, 20));
+		setField(owner, "userIdx", 1L);
 		setField(owner, "regdate", LocalDateTime.of(2026, 10, 12, 10, 0));
 		ownerUser = new CustomUserDetails(owner);
 
-		Member other = Member.create("other01", "{noop}x", "ほか", "o@example.com", null);
-		setField(other, "memberIdx", 2L);
+		User other = User.create("other01", "{noop}x", "ほか", "o@example.com", null);
+		setField(other, "userIdx", 2L);
 		otherUser = new CustomUserDetails(other);
 
 		post = Post.create("abcd1234", 1L, "ゆうすけのポスト", Theme.SHOGATSU, LocalDateTime.now().plusDays(30), "ゆうすけ");
 		setField(post, "postIdx", 10L);
 
-		given(memberService.get(1L)).willReturn(owner);
+		given(userService.get(1L)).willReturn(owner);
 		given(postService.getByCode("abcd1234")).willReturn(post);
 		given(postService.getByCode("nothing0")).willThrow(new BusinessException(ErrorCode.POST_NOT_FOUND));
 		given(postService.getOwned("abcd1234", 1L)).willReturn(post);
@@ -129,6 +129,25 @@ class WebPageTest {
 		mvc.perform(get("/post/nothing0"))
 			.andExpect(status().isNotFound())
 			.andExpect(content().string(containsString("ポストが見つかりません")));
+	}
+
+	@Test
+	void 에러는_팝업으로_내부_메시지는_숨긴다() throws Exception {
+		given(postService.getByCode("boom0000")).willThrow(new IllegalStateException("DB-INTERNAL-DETAIL"));
+		mvc.perform(get("/post/boom0000"))
+			.andExpect(status().isInternalServerError())
+			.andExpect(content().string(containsString("btnBack")))
+			.andExpect(content().string(containsString("しばらくしてからもう一度お試しください")))
+			.andExpect(content().string(not(containsString("DB-INTERNAL-DETAIL"))));
+		// API 는 JSON
+		given(postService.decorate(eq("boom0000"), anyLong(), any())).willThrow(new IllegalStateException("DB-INTERNAL-DETAIL"));
+		mvc.perform(put("/api/posts/boom0000/decorate").with(csrf()).with(user(ownerUser))
+				.contentType(MediaType.APPLICATION_JSON).content("{\"decos\":[]}"))
+			.andExpect(status().isInternalServerError())
+			.andExpect(jsonPath("$.code").value("INTERNAL_ERROR"));
+		// 없는 포스트도 팝업
+		mvc.perform(get("/post/nothing0"))
+			.andExpect(content().string(containsString("btnBack")));
 	}
 
 	@Test
@@ -192,11 +211,11 @@ class WebPageTest {
 
 	@Test
 	void 아이디_중복_확인_API() throws Exception {
-		given(memberService.isUseridAvailable(anyString())).willReturn(true);
-		mvc.perform(get("/api/members/check-id").param("userid", "newuser1"))
+		given(userService.isUseridAvailable(anyString())).willReturn(true);
+		mvc.perform(get("/api/users/check-id").param("userid", "newuser1"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data.available").value(true));
-		mvc.perform(get("/api/members/check-id").param("userid", "1bad"))
+		mvc.perform(get("/api/users/check-id").param("userid", "1bad"))
 			.andExpect(status().isBadRequest());
 	}
 

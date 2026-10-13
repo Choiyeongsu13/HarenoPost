@@ -18,10 +18,10 @@
 | 시안 | 템플릿 | 바꿀 점 |
 |---|---|---|
 | index.html | index.html | 로그인 여부로 헤더 버튼 분기(`sec:authorize`) |
-| login.html | member/login.html | `th:action="@{/login}"`, name=`userid`/`passwd`, `?error` 메시지 |
-| signup.html | member/signup.html | 데모 코드 123456, `admin` 중복 데모 → `/api/members/check-id`, `/api/mail/*` |
-| mypage.html | member/mypage.html | 프로필·통계·포스트 목록을 모델로. 상태 배지 受付中/開封済み |
-| (없음) | member/edit.html | signup 폼 스타일 재사용 |
+| login.html | user/login.html | `th:action="@{/login}"`, name=`userid`/`passwd`, `?error` 메시지 |
+| signup.html | user/signup.html | 데모 코드 123456, `admin` 중복 데모 → `/api/users/check-id`, `/api/mail/*` |
+| mypage.html | user/mypage.html | 프로필·통계·포스트 목록을 모델로. 상태 배지 受付中/開封済み |
+| (없음) | user/edit.html | signup 폼 스타일 재사용 |
 | create.html (formArea) | post/create.html | 폼 POST `/post/new`. 테마 값은 hidden `theme` |
 | create.html (doneArea) | post/created.html | 링크 `https://{host}/post/{code}` |
 | decorate.html | post/decorate.html | 상단 테마 탭 삭제(포스트 테마 고정). 저장 → `PUT /api/posts/{code}/decorate` |

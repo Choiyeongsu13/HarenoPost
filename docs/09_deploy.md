@@ -13,18 +13,22 @@
 | IP | 탄력적 IP `43.200.133.12` (껐다 켜도 유지) |
 | SSH | 22(브라우저 Instance Connect용), **2222**(학교 네트워크가 22번을 막아서 추가) |
 | SSH 키 | PC `%USERPROFILE%\.ssh\harenopost` (ed25519, `~/.ssh/authorized_keys` 에 등록) |
-| 보안 그룹 | 22(Instance Connect), 2222(내 IP), 8080 또는 80(전체). **1521 은 열지 않는다** |
-| DB | Docker `gvenzl/oracle-xe:21-slim`, 서비스 이름 `XEPDB1`, 계정 `harenopost`, SGA 640M |
+| 보안 그룹 | 22(Instance Connect), 2222(내 IP), **2200(전체, Oracle)**, 8080 또는 80(전체) |
+| DB | Docker `gvenzl/oracle-xe:21-slim`, 호스트 포트 **2200** → 컨테이너 1521, 서비스 이름 `XEPDB1`, 계정 `harenopost`, SGA 640M |
 | 비용 | 계속 켜 두면 월 약 $25 (t3.small + EBS + IPv4). 끝나면 인스턴스 종료 + **탄력적 IP 릴리스** |
 
-### 매일 개발 시작할 때 (PC PowerShell, 창은 켜 둔다)
+### DB 접속 (터널 불필요)
 
-```bash
-ssh -p 2222 -i "$env:USERPROFILE\.ssh\harenopost" -N -L 1521:localhost:1521 ec2-user@43.200.133.12
-```
+학교 네트워크가 1521 을 막고 2200 은 열려 있어서, Oracle 을 **2200 번으로 외부에 공개**했다(RyokanMaker 와 같은 방식).
+외부에 열려 있으므로 SYS/SYSTEM, harenopost 비밀번호는 **추측하기 어려운 값**으로 바꿔 두었다(2026-10-13).
+
+| 어디서 | URL |
+|---|---|
+| PC (SQL Developer, STS) | 호스트 `43.200.133.12`, 포트 `2200`, 서비스 이름 `XEPDB1` → `jdbc:oracle:thin:@43.200.133.12:2200/XEPDB1` |
+| EC2 안의 앱 (배포) | `jdbc:oracle:thin:@localhost:2200/XEPDB1` |
 
 서버에 들어갈 때: `ssh -p 2222 -i "$env:USERPROFILE\.ssh\harenopost" ec2-user@43.200.133.12`
-다른 장소(집 등)에서 접속이 안 되면 보안 그룹 2222 규칙의 "내 IP" 를 다시 맞춘다.
+다른 장소(집 등)에서 SSH 가 안 되면 보안 그룹 2222 규칙의 "내 IP" 를 다시 맞춘다.
 
 ---
 
@@ -57,7 +61,7 @@ exit   # 다시 접속해야 docker 그룹이 적용된다
 
 ```bash
 docker run -d --name oracle --restart unless-stopped \
-  -p 127.0.0.1:1521:1521 \
+  -p 2200:1521 \
   -e ORACLE_PASSWORD='system비밀번호' \
   -e APP_USER=harenopost -e APP_USER_PASSWORD='앱비밀번호' \
   -e TZ=Asia/Tokyo \
@@ -68,8 +72,24 @@ docker logs -f oracle   # "DATABASE IS READY TO USE!" 가 나오면 Ctrl+C
 ```
 
 - `APP_USER` 가 XEPDB1 안에 `harenopost` 계정을 만들고 권한을 준다(ORA-01017 방지)
-- `127.0.0.1:1521` 로만 열어서 외부에서는 접속할 수 없다
-- 데이터는 `oracle-data` 볼륨에 남는다(컨테이너를 지워도 유지)
+- 비밀번호 환경변수는 **처음 만들 때만** 쓰인다. 이후 컨테이너를 다시 만들 때는 `-e ORACLE_PASSWORD ...` 없이 `-p 2200:1521 -e TZ=Asia/Tokyo -v oracle-data:...` 만 주면 된다
+- 데이터·비밀번호·메모리 설정은 `oracle-data` 볼륨에 남는다(컨테이너를 지워도 유지)
+- 보안 그룹에 `사용자 지정 TCP 2200 / 0.0.0.0/0` 추가
+
+### 비밀번호 바꾸기
+
+```bash
+docker exec oracle resetPassword '새관리자비밀번호'   # SYS, SYSTEM
+docker exec -it oracle sqlplus / as sysdba
+```
+
+```sql
+ALTER SESSION SET CONTAINER = XEPDB1;
+ALTER USER harenopost IDENTIFIED BY "새앱비밀번호";
+EXIT
+```
+
+`EXIT` 다음 줄에 다른 명령을 붙여 넣으면 SQL 로 해석되니, 프롬프트가 `$` 로 돌아온 뒤 docker 명령을 친다.
 
 ## 4. Oracle 메모리 줄이기 (2GB 서버용)
 
@@ -90,7 +110,7 @@ docker logs -f oracle   # 다시 READY 확인
 free -h                 # available 이 600MB 이상 남는지 확인
 ```
 
-## 5. 테이블 만들기 (내 PC 에서 SSH 터널)
+## 5. SSH 접속 · 테이블 만들기
 
 ### 5-1. SSH 키 등록 (키 페어 없이 만든 인스턴스)
 
@@ -118,32 +138,29 @@ sudo ss -tlnp | grep sshd   # :22 와 :2222
 
 보안 그룹에 `사용자 지정 TCP 2222 / 내 IP` 추가.
 
-### 5-3. 터널 열기
+### 5-3. 테이블 만들기
 
-내 PC 에서 터널을 켜 둔다(창을 닫으면 끊긴다).
-
-```bash
-ssh -p 2222 -i "$env:USERPROFILE\.ssh\harenopost" -N -L 1521:localhost:1521 ec2-user@43.200.133.12
-```
-
-SQL Developer: 호스트 `localhost`, 포트 `1521`, **서비스 이름** `XEPDB1`, 사용자 `harenopost` → `sql/schema.sql` 실행.
+SQL Developer: 호스트 `43.200.133.12`, 포트 `2200`, **서비스 이름** `XEPDB1`, 사용자 `harenopost` → `sql/schema.sql` 실행.
 관리자 계정의 passwd 는 BCrypt 값으로 바꿔서 넣는다.
 
-로컬 개발도 같은 터널로 EC2 DB 를 쓴다. `application-secret.yml`:
+로컬 개발도 EC2 DB 를 그대로 쓴다. `application-secret.yml`:
 
 ```yaml
 spring:
   datasource:
-    url: jdbc:oracle:thin:@localhost:1521/XEPDB1
+    url: jdbc:oracle:thin:@43.200.133.12:2200/XEPDB1
     username: harenopost
-    password: 앱비밀번호
+    password: "앱비밀번호"
 ```
+
+> 처음에는 1521 을 `127.0.0.1` 에만 열고 SSH 터널(`ssh -p 2222 ... -N -L 1521:localhost:1521 ...`)로 접속했지만,
+> 매번 터널을 켜야 해서 2200 직접 접속으로 바꿨다. 다시 닫고 싶으면 `-p 127.0.0.1:2200:1521` 로 컨테이너를 다시 만들고 보안 그룹 2200 규칙을 지운 뒤 터널을 쓴다.
 
 ## 6. 앱 실행 (10/24)
 
 ```bash
 mkdir -p ~/harenopost/upload
-export DB_URL='jdbc:oracle:thin:@localhost:1521/XEPDB1'
+export DB_URL='jdbc:oracle:thin:@localhost:2200/XEPDB1'
 export DB_USERNAME=harenopost
 export DB_PASSWORD='앱비밀번호'
 export MAIL_USERNAME='보내는주소@gmail.com'
@@ -163,7 +180,7 @@ nohup java -Xms256m -Xmx512m -Duser.timezone=Asia/Tokyo \
 |---|---|
 | 앱이 갑자기 죽음 | `dmesg \| grep -i kill` 로 OOM 확인 → 스왑·4번 설정 확인 |
 | ORA-01017 | 서비스 이름이 `XEPDB1` 인지(SID `XE` 아님), 사용자·비밀번호 대소문자 |
-| ORA-12541 / 연결 거부 | `docker ps` 로 oracle 실행 중인지, 터널이 켜져 있는지 |
+| ORA-12541 / 연결 거부 | `docker ps` 로 oracle 실행 중인지(`0.0.0.0:2200->1521`), 보안 그룹 2200 규칙, 인스턴스가 켜져 있는지 |
 | ssh `Connection timed out` | 네트워크가 22 번을 막는지(`-p 2222` 사용), 보안 그룹 "내 IP" 가 지금 IP 인지 |
 | STS 실행 시 `-parameters` 500 에러 | `@PathVariable("code")` 처럼 이름을 적었는지 (Eclipse 컴파일러는 파라미터 이름을 남기지 않음) |
 | 시간이 9시간 어긋남 | `date`, `docker exec oracle date`, JVM `-Duser.timezone` |

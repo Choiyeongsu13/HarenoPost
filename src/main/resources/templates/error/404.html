@@ -3,6 +3,6 @@
 <head th:replace="~{fragments/head :: head('見つかりません | ハレの日ポスト', ~{})}"></head>
 <body>
   <header th:replace="~{fragments/header :: header}"></header>
-  <main th:replace="~{fragments/error :: error(${message != null and message != '' and status == null ? message : 'ページが見つかりません'})}"></main>
+  <th:block th:replace="~{fragments/error :: popup(${message != null and message != '' and status == null ? message : 'ページが見つかりません'})}"></th:block>
 </body>
 </html>

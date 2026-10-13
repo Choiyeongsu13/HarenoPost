@@ -9,16 +9,16 @@ DROP TABLE tbl_report PURGE;
 DROP TABLE tbl_card   PURGE;
 DROP TABLE tbl_post   PURGE;
 DROP TABLE tbl_design PURGE;
-DROP TABLE tbl_member PURGE;
+DROP TABLE tbl_user PURGE;
 
-DROP SEQUENCE seq_member;
+DROP SEQUENCE seq_user;
 DROP SEQUENCE seq_post;
 DROP SEQUENCE seq_card;
 DROP SEQUENCE seq_design;
 DROP SEQUENCE seq_report;
 
 -- (2) 시퀀스 (JPA: @SequenceGenerator(allocationSize = 1))
-CREATE SEQUENCE seq_member START WITH 1 INCREMENT BY 1 NOCACHE;
+CREATE SEQUENCE seq_user START WITH 1 INCREMENT BY 1 NOCACHE;
 CREATE SEQUENCE seq_post   START WITH 1 INCREMENT BY 1 NOCACHE;
 CREATE SEQUENCE seq_card   START WITH 1 INCREMENT BY 1 NOCACHE;
 CREATE SEQUENCE seq_design START WITH 1 INCREMENT BY 1 NOCACHE;
@@ -27,8 +27,8 @@ CREATE SEQUENCE seq_report START WITH 1 INCREMENT BY 1 NOCACHE;
 -- (3) 테이블
 
 -- 회원 (관리자는 role = 'ROLE_ADMIN')
-CREATE TABLE tbl_member (
-    member_idx  NUMBER         PRIMARY KEY,
+CREATE TABLE tbl_user (
+    user_idx    NUMBER       PRIMARY KEY,
     userid      VARCHAR2(20)   NOT NULL UNIQUE,
     passwd      VARCHAR2(100)  NOT NULL,                       -- BCrypt
     nickname    VARCHAR2(30)   NOT NULL,
@@ -56,15 +56,15 @@ CREATE TABLE tbl_design (
 CREATE TABLE tbl_post (
     post_idx    NUMBER         PRIMARY KEY,
     code        VARCHAR2(20)   NOT NULL UNIQUE,
-    member_idx  NUMBER         NOT NULL,
+    user_idx    NUMBER       NOT NULL,
     title       VARCHAR2(60)   NOT NULL,
     theme       VARCHAR2(20)   NOT NULL CHECK (theme IN ('SHOGATSU', 'BIRTHDAY', 'CHRISTMAS')),
     open_date   TIMESTAMP      NOT NULL,
     decos       VARCHAR2(100),                                 -- 장식 코드 CSV 예: 'KAGAMI,KADOMATSU' (없으면 NULL). 우체통 색은 빨강 고정이라 컬럼 없음
     name_tag    VARCHAR2(30),                                  -- 이름표 최대 8자
     regdate     TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
-    CONSTRAINT fk_post_member FOREIGN KEY (member_idx)
-        REFERENCES tbl_member(member_idx) ON DELETE CASCADE
+    CONSTRAINT fk_post_user FOREIGN KEY (user_idx)
+        REFERENCES tbl_user(user_idx) ON DELETE CASCADE
 );
 
 -- 카드
@@ -95,7 +95,7 @@ CREATE TABLE tbl_report (
 );
 
 -- (4) 인덱스
-CREATE INDEX idx_post_member   ON tbl_post(member_idx);
+CREATE INDEX idx_post_user   ON tbl_post(user_idx);
 CREATE INDEX idx_card_post     ON tbl_card(post_idx, regdate);
 CREATE INDEX idx_card_ip       ON tbl_card(ip, regdate);      -- 도배 검사
 CREATE INDEX idx_report_status ON tbl_report(status);
@@ -103,7 +103,7 @@ CREATE INDEX idx_report_status ON tbl_report(status);
 -- (5) 초기 데이터
 -- 관리자 계정: passwd 는 BCrypt 결과값으로 교체
 --   System.out.println(new BCryptPasswordEncoder().encode("비밀번호"));
-INSERT INTO tbl_member(member_idx, userid, passwd, nickname, email, role)
-VALUES (seq_member.NEXTVAL, 'admin', '여기에_BCrypt_결과값', '管理者', 'admin@example.com', 'ROLE_ADMIN');
+INSERT INTO tbl_user(user_idx, userid, passwd, nickname, email, role)
+VALUES (seq_user.NEXTVAL, 'admin', '여기에_BCrypt_결과값', '管理者', 'admin@example.com', 'ROLE_ADMIN');
 
 COMMIT;

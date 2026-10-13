@@ -15,9 +15,9 @@
 1. **배운 범위 안에서 구현**: 개인 학습 저장소(Spring_project)에서 쓴 기술만 쓴다. 새 라이브러리(QueryDSL, MapStruct, React, Vue, WebSocket, Redis 등)를 추가하지 않는다. 필요해 보이면 먼저 사람에게 묻는다.
 2. 필수 기술: **Spring Security, Spring Data JPA, Thymeleaf, ajax(jQuery)**
 3. DB는 **Oracle**, 배포는 **AWS EC2**
-4. JPA 연관관계는 `@ManyToOne` 대신 **Long FK 필드**(`memberIdx`, `postIdx` …)로 둔다. 조인이 필요하면 서비스에서 두 번 조회하거나 JPQL을 쓴다.
+4. JPA 연관관계는 `@ManyToOne` 대신 **Long FK 필드**(`userIdx`, `postIdx` …)로 둔다. 조인이 필요하면 서비스에서 두 번 조회하거나 JPQL을 쓴다.
 5. 서버에서 반드시 검사(클라이언트 검사만으로 끝내지 않음):
-   - **주인 검사**: 포스트의 `memberIdx` == 로그인 회원
+   - **주인 검사**: 포스트의 `userIdx` == 로그인 회원
    - **개봉일 검사**: 개봉일 전에는 카드 `contents`가 어떤 응답(HTML, JSON)에도 들어가면 안 된다. 개수만 보여 준다.
    - **도배 방지**: 같은 IP는 1분에 카드 1장
 6. 시간대: JVM `-Duser.timezone=Asia/Tokyo`, 서버 OS도 Asia/Tokyo. 날짜는 `LocalDateTime`
@@ -35,21 +35,27 @@
 
 ## 4. 패키지 구조
 
+계층별로 나눈다(학습 저장소 exSampleJPA 와 같은 구조). 클래스 이름은 그대로 둔다.
+
 ```
 com.harenopost
  ├─ HarenoPostApplication.java
- ├─ config      SecurityConfig, WebConfig(업로드 경로 매핑)
- ├─ member      Member, MemberRepository, MemberService, MemberController, MemberApiController, dto/
- ├─ mail        EmailService, MailApiController
- ├─ post        Post, PostRepository, PostService, PostController, PostApiController, Theme(enum), Deco(enum), dto/
- ├─ card        Card, CardRepository, CardService, CardApiController, dto/
- ├─ design      Design, DesignRepository, DesignService
- ├─ report      Report, ReportRepository, ReportService
- ├─ admin       AdminController, AdminApiController
- └─ common      ApiResponse, GlobalExceptionHandler, BusinessException, ErrorCode, SecurityUtil
+ ├─ controller  IndexController, UserController, UserApiController, MailApiController,
+ │              PostController, PostApiController, (CardApiController, AdminController, AdminApiController)
+ ├─ dto         ApiResponse, CustomUserDetails, SignupForm, ProfileForm, PasswordForm, WithdrawForm,
+ │              PostForm, DecorateRequest, DecorateResponse, MyPostDto, PostViewDto, EnvelopeDto
+ ├─ entity      User, Post, Card, Design, Report, Theme(enum), Deco(enum)
+ ├─ repository  UserRepository, PostRepository, CardRepository, DesignRepository, ReportRepository
+ ├─ service     UserService, CustomUserDetailsService, EmailService, MailAuthService, PostService, CardService,
+ │              (DesignService, ReportService)
+ ├─ exception   BusinessException, ErrorCode, GlobalExceptionHandler
+ ├─ config      SecurityConfig, WebConfig(업로드 경로 매핑), LoginSuccessHandler
+ └─ util        SecurityUtil
 ```
 
-템플릿: `src/main/resources/templates/{index, member/*, post/*, card/*, admin/*, fragments/*}.html`
+괄호 안은 아직 만들지 않은 클래스. 테스트도 같은 패키지에 둔다(`entity/ThemeTest`, `service/PostTest`).
+
+템플릿: `src/main/resources/templates/{index, user/*, post/*, card/*, admin/*, fragments/*}.html`
 
 ## 5. 코딩 규칙
 

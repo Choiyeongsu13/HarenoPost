@@ -6,27 +6,27 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import com.harenopost.member.MemberService;
+import com.harenopost.service.UserService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-/** 로그인 성공: last_login 갱신 후 원래 가려던 화면 또는 /mypage */
+// 로그인 성공
 @Component
 public class LoginSuccessHandler extends SavedRequestAwareAuthenticationSuccessHandler {
 
-	private final MemberService memberService;
+	private final UserService userService;
 
-	public LoginSuccessHandler(MemberService memberService) {
-		this.memberService = memberService;
+	public LoginSuccessHandler(UserService userService) {
+		this.userService = userService;
 		setDefaultTargetUrl("/mypage");
 	}
 
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
 			throws ServletException, IOException {
-		memberService.loggedIn(authentication.getName());
+		userService.loggedIn(authentication.getName());
 		super.onAuthenticationSuccess(request, response, authentication);
 	}
 }

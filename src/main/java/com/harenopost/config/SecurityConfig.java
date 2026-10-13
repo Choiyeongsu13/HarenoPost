@@ -25,7 +25,7 @@ public class SecurityConfig {
 				.requestMatchers("/post/new").authenticated() // "/post/*" 보다 먼저
 				.requestMatchers("/", "/login", "/signup", "/post/*", "/css/**", "/js/**", "/img/**", "/upload/**",
 						"/error", "/error/**", "/favicon.ico").permitAll()
-				.requestMatchers("/api/members/check-id", "/api/mail/**").permitAll()
+				.requestMatchers("/api/users/check-id", "/api/mail/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/posts/*/designs").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/posts/*/cards").permitAll()
 				.requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
@@ -39,7 +39,7 @@ public class SecurityConfig {
 				.failureUrl("/login?error")
 				.permitAll())
 			.logout(l -> l.logoutUrl("/logout").logoutSuccessUrl("/"))
-			// /api/** 는 로그인 화면으로 보내지 않고 401, 그 밖의 화면은 로그인 화면으로
+	
 			.exceptionHandling(e -> e
 				.defaultAuthenticationEntryPointFor(
 					new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),

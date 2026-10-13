@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
-<!--
-  공통 head. 사용법:
-  <head th:replace="~{fragments/head :: head('ログイン | ハレの日ポスト', ~{::style})}">  (페이지 전용 style 이 없으면 ~{})
--->
+
 <head th:fragment="head(title, extra)">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

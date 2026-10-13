@@ -6,7 +6,7 @@ DDL 원본: `sql/schema.sql` (Oracle). 서버에서는 이 파일로 직접 만�
 
 ```mermaid
 erDiagram
-    tbl_member ||--o{ tbl_post : "만든다 (CASCADE)"
+    tbl_user ||--o{ tbl_post : "만든다 (CASCADE)"
     tbl_post   ||--o{ tbl_card : "받는다 (CASCADE)"
     tbl_design |o--o{ tbl_card : "디자인 (SET NULL)"
     tbl_card   ||--o{ tbl_report : "신고 (CASCADE)"
@@ -14,10 +14,10 @@ erDiagram
 
 ## 테이블
 
-### tbl_member — 회원
+### tbl_user — 회원
 | 컬럼 | 타입 | 제약 | 설명 |
 |---|---|---|---|
-| member_idx | NUMBER | PK, seq_member | |
+| user_idx | NUMBER | PK, seq_user | |
 | userid | VARCHAR2(20) | NOT NULL, UNIQUE | 로그인 ID |
 | passwd | VARCHAR2(100) | NOT NULL | BCrypt |
 | nickname | VARCHAR2(30) | NOT NULL | 10자 |
@@ -32,7 +32,7 @@ erDiagram
 |---|---|---|---|
 | post_idx | NUMBER | PK, seq_post | |
 | code | VARCHAR2(20) | NOT NULL, UNIQUE | 공유용 8자 |
-| member_idx | NUMBER | FK → tbl_member, CASCADE | 주인 |
+| user_idx | NUMBER | FK → tbl_user, CASCADE | 주인 |
 | title | VARCHAR2(60) | NOT NULL | 20자 |
 | theme | VARCHAR2(20) | 'SHOGATSU' / 'BIRTHDAY' / 'CHRISTMAS' | |
 | open_date | TIMESTAMP | NOT NULL | JST |
@@ -87,7 +87,7 @@ public class Post {
     @Column(name = "post_idx") private Long postIdx;
 
     @Column(nullable = false, unique = true) private String code;
-    @Column(name = "member_idx", nullable = false) private Long memberIdx;   // @ManyToOne 대신 FK 값
+    @Column(name = "user_idx", nullable = false) private Long userIdx;   // @ManyToOne 대신 FK 값
     @Column(nullable = false) private String title;
     @Enumerated(EnumType.STRING) @Column(nullable = false) private Theme theme;
     @Column(name = "open_date", nullable = false) private LocalDateTime openDate;
@@ -96,7 +96,7 @@ public class Post {
     @Column(insertable = false, updatable = false) private LocalDateTime regdate; // DB DEFAULT
 
     public boolean isOpened() { return !LocalDateTime.now().isBefore(openDate); }
-    public boolean isOwner(Long loginIdx) { return memberIdx.equals(loginIdx); }
+    public boolean isOwner(Long loginIdx) { return userIdx.equals(loginIdx); }
     public List<Deco> getDecoList() { /* CSV → Deco enum 목록 */ }
     public void decorate(List<Deco> decos, String nameTag) { /* 테마 검사 후 슬롯 순 CSV 저장 */ }
 }
@@ -107,8 +107,8 @@ public class Post {
 - `regdate` 같은 DB 기본값 컬럼은 `insertable = false, updatable = false`. 엔티티에서 바로 써야 하면 `@PrePersist` 로 넣어도 된다(둘 중 하나로 통일)
 - 자주 쓰는 쿼리
   - `PostRepository.findByCode(String)`
-  - `PostRepository.findByMemberIdxOrderByRegdateDesc(Long)`
-  - `PostRepository.countByMemberIdxAndOpenDateAfter(Long, LocalDateTime)` — 受付中 개수(5개 제한)
+  - `PostRepository.findByUserIdxOrderByRegdateDesc(Long)`
+  - `PostRepository.countByUserIdxAndOpenDateAfter(Long, LocalDateTime)` — 受付中 개수(5개 제한)
   - `CardRepository.countByPostIdx(Long)`
   - `CardRepository.findByPostIdxOrderByRegdateAsc(Long)`
   - `CardRepository.existsByIpAndRegdateAfter(String, LocalDateTime)` — 도배 검사(1분 전 시각)
