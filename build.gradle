@@ -49,3 +49,9 @@ tasks.named('bootRun') {
 tasks.named('test') {
 	jvmArgs '-Duser.timezone=Asia/Tokyo'
 }
+
+// 배포용 jar 에는 비밀 설정 파일을 넣지 않는다 (서버에서는 환경변수로 넣는다)
+tasks.named('bootJar') {
+	exclude '**/application-secret.yml', '**/application-secret.yml.example'
+	archiveFileName = 'HarenoPost.jar'
+}
