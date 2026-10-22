@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head('お知らせ | ハレの日ポスト', ~{})}"></head>
+<head th:replace="~{Include/head :: head('お知らせ | ハレの日ポスト', ~{})}"></head>
 <body>
-  <header th:replace="~{fragments/header :: header}"></header>
- <th:block th:replace="~{fragments/error :: popup(${message != null and message != '' and status == null ? message : 'エラーが発生しました。しばらくしてからもう一度お試しください'})}"></th:block>
+  <header th:replace="~{Include/topmenu :: topmenu}"></header>
+ <th:block th:replace="~{Include/error_popup :: popup(${message != null and message != '' and status == null ? message : 'エラーが発生しました。しばらくしてからもう一度お試しください'})}"></th:block>
 </body>
 </html>

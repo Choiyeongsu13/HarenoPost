@@ -36,7 +36,7 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: 2MB
+      max-file-size: 3MB          # 2MB 검사는 DesignService 에서 (메시지를 보여 주려고 조금 크게)
       max-request-size: 5MB
 
 server:

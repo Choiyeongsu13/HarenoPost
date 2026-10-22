@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{Include/head :: head('カードを読む | ハレの日ポスト', ~{::style})}">
+  <style>
+    .head { text-align: center; padding: 8px 0 20px; }
+    .head h1 { margin: 10px 0 4px; font-size: 26px; }
+    .head p { margin: 0; }
+    .card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .card-btn {
+      position: relative; aspect-ratio: 4 / 3; border-radius: 12px; border: none; cursor: pointer; padding: 12px;
+      display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; text-align: left;
+      font: inherit; color: #2B2622; background: #FFFFFF; box-shadow: 0 6px 16px rgba(0,0,0,.25);
+    }
+    .card-btn .band { position: absolute; left: 0; right: 0; top: 0; height: 34%; border-radius: 12px 12px 0 0; background: var(--accent) center / cover no-repeat; }
+    .card-btn b { font-size: 15px; }
+    .card-btn small { color: #6B635C; font-size: 12px; }
+    .unread { position: absolute; right: 10px; top: 10px; padding: 2px 8px; border-radius: 999px; background: #C8323C; color: #FFFFFF; font-size: 11px; font-weight: 700; }
+    .read .unread { display: none; }
+    .letter { border-radius: 14px; padding: 20px; min-height: 160px; white-space: pre-line; line-height: 1.9; background: #F7F4EF; }
+    .report-area { display: none; margin-top: 14px; }
+    .mailbox-mini { display: flex; justify-content: center; padding: 64px 0 24px; }
+    .mailbox-mini .post { margin-left: 60px; }
+  </style>
+</head>
+<!--/* 주인 + 개봉 후가 서버에서 확인된 뒤에만 이 화면이 열린다 (CardService.cardList) */-->
+<body th:class="|theme-${post.theme.key}|">
+  <div class="stage">
+    <div class="stage-deco" id="bg" aria-hidden="true"></div>
+    <div class="stage-inner">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px">
+        <a th:href="@{/}" class="logo" style="font-size:15px">ハレの日ポスト</a>
+        <a th:href="@{/User/user_mypage}" class="btn btn-sm" style="border-color:var(--ink);color:var(--ink)">マイページ</a>
+      </div>
+
+      <div class="head">
+        <span class="theme-badge" th:text="${post.theme.label}"></span>
+        <h1 th:text="${post.title}"></h1>
+        <p>開封しました！ <b id="total" th:text="${#lists.size(cList)}">0</b>通のカードがとどいています。</p>
+      </div>
+
+      <!--/* 포스트 화면과 같은 우체통 (장식·이름표) */-->
+      <div class="mailbox-mini" aria-hidden="true">
+        <div class="post" id="post">
+          <div class="deco-side"></div><div class="deco-top"></div>
+          <div class="post-roof"></div>
+          <div class="post-body"><div class="post-slot"></div><div class="post-tag" th:text="${post.nameTag != null ? post.nameTag : '　'}"></div></div>
+          <div class="deco-front"></div>
+          <div class="post-pole"></div><div class="post-base"></div>
+        </div>
+      </div>
+
+      <p class="muted center" th:if="${#lists.isEmpty(cList)}" style="color:var(--sub)">カードはまだありません。</p>
+      <div class="card-grid" id="grid">
+        <!--/* 본문은 data-contents 에 넣고 모달에서 .text() 로 보여 준다 (XSS 방지) */-->
+        <button type="button" class="card-btn" th:each="c : ${cList}" th:classappend="${c.read} ? 'read' : ''"
+                th:attr="data-idx=${c.cardIdx},data-from=${c.senderName},data-contents=${c.contents},data-at=${#temporals.format(c.regdate, 'yyyy年M月d日')},data-image=${c.imageUrl}">
+          <span class="band" th:style="${c.imageUrl != null} ? |background-image:url('${c.imageUrl}')| : ''"></span>
+          <span class="unread">未読</span>
+          <b th:text="${c.senderName}"></b>
+          <small th:text="${#temporals.format(c.regdate, 'yyyy年M月d日')}"></small>
+        </button>
+      </div>
+      <p class="muted center" style="margin-top:20px;color:var(--sub)" th:unless="${#lists.isEmpty(cList)}">カードをタップすると読めます。</p>
+    </div>
+  </div>
+
+  <!--/* カードを読むモーダル */-->
+  <div class="modal" id="readModal" role="dialog" aria-modal="true" aria-labelledby="readFrom">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2 id="readFrom"></h2>
+        <button type="button" class="icon-btn" data-close aria-label="閉じる"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+      </div>
+      <div class="letter" id="letter"></div>
+      <p class="muted" id="sentAt" style="margin:10px 0 0"></p>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px">
+        <button type="button" class="btn btn-sm" id="reportBtn">通報する</button>
+      </div>
+      <div class="report-area" id="reportArea">
+        <label class="muted" for="reason">通報の理由</label>
+        <textarea class="input" id="reason" maxlength="100" style="min-height:80px;margin-top:6px" placeholder="不適切な内容の理由を書いてください"></textarea>
+        <button type="button" class="btn btn-block" id="sendReport" style="margin-top:8px">通報を送る</button>
+      </div>
+    </div>
+  </div>
+
+  <script th:src="@{/js/theme-art.js}"></script>
+  <script th:inline="javascript">
+    drawBackground($('#bg'), /*[[${post.theme.key}]]*/ 'shogatsu');
+    drawDecos($('#post'), /*[[${post.decoCodes}]]*/ []);
+    var currentIdx = null;
+
+    // 카드를 열면 본문을 보여 주고, 처음 연 카드는 읽음 처리
+    $('#grid').on('click', '.card-btn', function () {
+      var $b = $(this);
+      currentIdx = $b.data('idx');
+      // .data() 는 숫자·JSON 처럼 보이는 값을 바꿔 버리므로 .attr() 로 원래 문자열을 읽는다
+      $('#readFrom').text($b.attr('data-from') + ' より');
+      $('#letter').text($b.attr('data-contents'));
+      $('#sentAt').text($b.attr('data-at') + ' に投函');
+      $('#reportArea').hide(); $('#reason').val('');
+      $('#readModal').addClass('open');
+      if (!$b.hasClass('read')) {
+        $.ajax({
+          url: '/Card/card_read',
+          type: 'post',
+          data: { cardIdx: currentIdx },
+          success: function () { $b.addClass('read'); },
+          error: apiError
+        });
+      }
+    });
+
+    // 신고
+    $('#reportBtn').on('click', function () { $('#reportArea').slideDown(150); });
+    $('#sendReport').on('click', function () {
+      var reason = $.trim($('#reason').val());
+      if (!reason) { toast('通報の理由を入力してください'); return; }
+      $.ajax({
+        url: '/Card/card_report',
+        type: 'post',
+        data: { cardIdx: currentIdx, reason: reason },
+        success: function (result) { $('#readModal').removeClass('open'); toast(result); },
+        error: apiError
+      });
+    });
+  </script>
+</body>
+</html>

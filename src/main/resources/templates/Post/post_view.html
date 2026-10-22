@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{Include/head :: head(${post.title + ' | ハレの日ポスト'}, ~{::style})}">
+  <style>
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 0 0; }
+    .topbar .logo { font-size: 15px; }
+    .share { border: 1.5px solid var(--ink); color: var(--ink); }
+    .titles { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 8px; text-align: center; }
+    .titles h1 { margin: 4px 0 0; font-size: 26px; }
+    .titles p { margin: 0; font-size: 14px; }
+    .mailbox-area .post { margin-left: 60px; }
+    .actions { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; }
+    .count { margin: 0; text-align: center; font-size: 14px; }
+    .closed { margin: 0; text-align: center; color: var(--sub); font-size: 14px; }
+    .counter { text-align: right; }
+  </style>
+</head>
+<!--/* 카드 본문은 이 화면에 절대 넣지 않는다 (봉투 = 보낸 이름 + 디자인) */-->
+<body th:class="|theme-${post.theme.key}|">
+  <div class="stage">
+    <div class="stage-deco" id="bg" aria-hidden="true"></div>
+
+    <div class="stage-inner">
+      <div class="topbar">
+        <a th:href="@{/}" class="logo">ハレの日ポスト</a>
+        <button type="button" class="icon-btn share js-copy" th:attr="data-url=${shareUrl}" aria-label="リンクをシェア">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"></path></svg>
+        </button>
+      </div>
+
+      <div class="titles">
+        <span class="theme-badge" th:text="${post.theme.label}"></span>
+        <h1 th:text="${post.title}"></h1>
+        <p th:text="|${#temporals.format(post.openDate, 'yyyy年M月d日 H:mm')} に開封|"></p>
+      </div>
+
+      <div class="countdown" th:attr="data-open-at=${post.openDateIso}">
+        <div><b class="d">0</b><span>日</span></div>
+        <div><b class="h">00</b><span>時間</span></div>
+        <div><b class="m">00</b><span>分</span></div>
+      </div>
+
+      <div class="mailbox-area" id="mailbox">
+        <div class="post" id="post">
+          <div class="deco-side"></div><div class="deco-top"></div>
+          <div class="post-roof"></div>
+          <div class="post-body"><div class="post-slot"></div><div class="post-tag" th:text="${post.nameTag != null ? post.nameTag : '　'}"></div></div>
+          <div class="deco-front"></div>
+          <div class="post-pole"></div><div class="post-base"></div>
+        </div>
+      </div>
+
+      <p class="count">カードが <b id="cnt" th:text="${#lists.size(eList)}">0</b>通 とどいています</p>
+
+      <!--/* 주인 */-->
+      <th:block th:if="${post.owner}">
+        <div class="actions" th:unless="${post.opened}">
+          <button type="button" class="btn btn-primary btn-lg btn-block js-copy" th:attr="data-url=${shareUrl}">リンクをコピー</button>
+          <div class="row">
+            <a th:href="@{/Post/post_decorate(code=${post.code})}" class="btn" style="flex:1">かざる</a>
+            <a th:href="@{/Post/post_modify(code=${post.code})}" class="btn" style="flex:1">設定</a>
+          </div>
+          <!--/* 주인 자신도 카드를 보낼 수 있다 */-->
+          <button type="button" class="btn btn-block" data-open="writeModal">カードを書く</button>
+          <p class="muted center" style="margin:4px 0 0;color:var(--sub)">開封日になると「カードをひらく」ボタンがあらわれます。</p>
+        </div>
+        <div class="actions" th:if="${post.opened}">
+          <a th:href="@{/Card/card_list(code=${post.code})}" class="btn btn-primary btn-lg btn-block">カードをひらく</a>
+        </div>
+      </th:block>
+
+      <!--/* 방문자 */-->
+      <th:block th:unless="${post.owner}">
+        <div class="actions" th:unless="${post.opened}">
+          <button type="button" class="btn btn-primary btn-lg btn-block" data-open="writeModal">カードを書く</button>
+          <button type="button" class="btn btn-block js-copy" th:attr="data-url=${shareUrl}">リンクをコピー</button>
+        </div>
+        <div class="actions" th:if="${post.opened}">
+          <p class="closed">このポストはもう受付を終了しました</p>
+        </div>
+      </th:block>
+    </div>
+  </div>
+
+  <!--/* 카드 쓰기 모달 (개봉 전에만) */-->
+  <div class="modal" id="writeModal" role="dialog" aria-modal="true" aria-labelledby="writeTitle" th:unless="${post.opened}">
+    <form class="modal-box" id="writeForm" novalidate>
+      <div class="modal-head">
+        <h2 id="writeTitle">カードを書く</h2>
+        <button type="button" class="icon-btn" data-close aria-label="閉じる"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+      </div>
+      <div class="field">
+        <label>カードのデザイン</label>
+        <div class="designs" id="designs">
+          <!--/* 기본 카드 모양 (디자인 없음) */-->
+          <button type="button" class="design on" data-idx="" aria-label="基本のカード" style="background:var(--accent)"></button>
+          <button type="button" class="design" th:each="d : ${dList}" th:attr="data-idx=${d.designIdx},data-image=${d.imageUrl},aria-label=${d.name}"
+                  th:style="|background:#FFFFFF url('${d.imageUrl}') center / cover no-repeat|"></button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="sender">お名前<span class="req">必須</span></label>
+        <input class="input" id="sender" maxlength="10" placeholder="例）たろう" th:value="${loginNickname}">
+      </div>
+      <div class="field">
+        <label for="message">メッセージ<span class="req">必須</span></label>
+        <textarea class="input" id="message" maxlength="300" placeholder="開封日まで、ポストの持ち主にも見えません"></textarea>
+        <span class="muted counter"><span id="len">0</span> / 300</span>
+      </div>
+      <button type="submit" class="btn btn-lg btn-block" id="sendBtn" style="background:#C8323C;border-color:#C8323C;color:#fff;font-weight:700">投函する</button>
+    </form>
+  </div>
+
+  <script th:src="@{/js/theme-art.js}"></script>
+  <script th:inline="javascript">
+    var theme = /*[[${post.theme.key}]]*/ 'shogatsu';
+    var decos = /*[[${post.decoCodes}]]*/ [];
+    // 봉투 목록: 보낸 이름과 디자인 이미지만
+    var envelopes = /*[[${envelopeJs}]]*/ [];
+
+    drawBackground($('#bg'), theme);
+    drawDecos($('#post'), decos);
+
+    // 봉투 위치 (우체통 주변)
+    // ※ "[[" 는 Thymeleaf 인라인 표현식이므로 띄어 쓴다
+    var SPOTS = [ [4, 4, -10], [70, 0, 9], [70, 36, -7], [2, 40, 6], [38, 0, -3], [72, 66, 5], [8, 70, 4] ];
+    function addEnvelope(name, imageUrl, i, isNew) {
+      var s = SPOTS[i % SPOTS.length];
+      var $e = $('<div class="envelope" aria-hidden="true"></div>').text(name)
+        .css({ left: s[0] + '%', top: s[1] + '%', transform: 'rotate(' + s[2] + 'deg)' })
+        .toggleClass('new', !!isNew);
+      if (imageUrl) { $e.css('--stamp', 'url("' + encodeURI(imageUrl) + '") center / cover'); }
+      $e.appendTo('#mailbox');
+    }
+    $.each(envelopes, function (i, env) { addEnvelope(env.senderName, env.imageUrl, i); });
+
+    // ---------- 카드 쓰기 ----------
+    var code = /*[[${post.code}]]*/ '';
+    $('#designs').on('click', '.design', function () { $('#designs .design').removeClass('on'); $(this).addClass('on'); });
+    $('#message').on('input', function () { $('#len').text($(this).val().length); });
+
+    $('#writeForm').on('submit', function (e) {
+      e.preventDefault();
+      var senderName = $.trim($('#sender').val()), contents = $.trim($('#message').val());
+      if (!senderName) { toast('お名前を入力してください'); return; }
+      if (!contents) { toast('メッセージを入力してください'); return; }
+      var $design = $('#designs .design.on');
+      var $btn = $('#sendBtn').prop('disabled', true);
+      $.ajax({
+        url: '/Card/card_write',
+        type: 'post',
+        data: { code: code, designIdx: $design.attr('data-idx') || '', senderName: senderName, contents: contents },
+        success: function (result) {
+          // 응답에 본문은 없다. 봉투는 입력한 이름과 고른 디자인으로 화면에서 추가한다
+          var n = Number($('#cnt').text());
+          addEnvelope(senderName, $design.attr('data-image') || null, n, true);
+          $('#cnt').text(n + 1);
+          $('#writeModal').removeClass('open');
+          $('#message').val(''); $('#len').text(0);
+          toast(result);
+        },
+        error: function (xhr) { toast(errMsg(xhr)); },
+        complete: function () { $btn.prop('disabled', false); }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,5 +1,7 @@
 package com.harenopost.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
@@ -12,12 +14,13 @@ import com.harenopost.exception.ErrorCode;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import lombok.extern.slf4j.Slf4j;
 
-/** 메일 발송 (Gmail SMTP, spring.mail.*) */
-@Slf4j
+//메일 발송 (Gmail SMTP, spring.mail.*)
 @Service
 public class EmailService {
+
+	//로그 출력용
+	private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
 	// spring.mail.host 가 없으면 빈이 없으므로 required=false
 	@Autowired(required = false)
@@ -29,8 +32,8 @@ public class EmailService {
 	@Value("${app.mail.dev-log:false}")
 	private boolean devLog;
 
-	/** 회원가입·메일 변경 인증 코드 발송 */
-	public void sendAuthCode(String toEmail, String code) {
+	//회원가입·메일 변경 인증 코드 발송
+	public void mailSend(String toEmail, String code) {
 		if (emailSender == null || mailFrom == null || mailFrom.isBlank()) {
 			if (devLog) {
 				// 로컬에서 메일 계정 없이 테스트할 때만. 응답에는 절대 넣지 않는다

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{Include/head :: head('ポストをつくる | ハレの日ポスト', ~{::style})}">
+  <style>
+    .preview { position: relative; overflow: hidden; border-radius: 16px; height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 22px; }
+    .preview .bg { position: absolute; inset: 0; }
+    .preview .cap { position: absolute; top: 16px; left: 0; right: 0; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .preview .ptitle { font-weight: 700; font-size: 18px; color: var(--ink); }
+    .preview .pdate { font-size: 13px; color: var(--ink); opacity: .85; }
+    .preview .post { margin-left: 60px; }
+    .choices { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .choice .ico { height: 48px; display: flex; align-items: center; justify-content: center; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a th:href="@{/}" class="logo">ハレの日ポスト</a>
+    <nav class="nav"><a th:href="@{/User/user_mypage}" class="btn">マイページ</a></nav>
+  </header>
+
+  <main class="page">
+    <h1 class="page-title">ポストをつくる</h1>
+    <p class="page-lead">記念日をえらぶと、背景と開封日が変わります。</p>
+
+    <div class="preview theme-shogatsu" id="preview">
+      <div class="bg" id="pvBg"></div>
+      <div class="cap">
+        <span class="theme-badge" id="pvBadge">お正月</span>
+        <span class="ptitle" id="pvTitle"></span>
+        <span class="pdate" id="pvDate"></span>
+      </div>
+      <div class="post" id="pvPost">
+        <div class="deco-side"></div><div class="deco-top"></div>
+        <div class="post-roof"></div>
+        <div class="post-body"><div class="post-slot"></div><div class="post-tag" th:text="${nickname}"></div></div>
+        <div class="deco-front"></div>
+        <div class="post-pole"></div><div class="post-base"></div>
+      </div>
+    </div>
+
+    <form class="panel" id="createForm" th:action="@{/Post/post_write}" th:object="${postRequestDTO}" method="post" style="margin-top:16px" novalidate>
+      <p class="msg err" th:each="err : ${#fields.globalErrors()}" th:text="${err}" role="alert"></p>
+      <input type="hidden" th:field="*{theme}">
+
+      <div class="field">
+        <label>記念日<span class="req">必須</span></label>
+        <div class="choices" role="radiogroup" aria-label="記念日">
+          <button type="button" class="choice" data-theme="shogatsu" role="radio" aria-checked="false"><span class="ico" aria-hidden="true"></span>お正月<small>1月1日</small></button>
+          <button type="button" class="choice" data-theme="birthday" role="radio" aria-checked="false"><span class="ico" aria-hidden="true"></span>誕生日<small>登録した誕生日</small></button>
+          <button type="button" class="choice" data-theme="christmas" role="radio" aria-checked="false"><span class="ico" aria-hidden="true"></span>クリスマス<small>12月25日</small></button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="openDate">開封日時<span class="req">必須</span></label>
+        <div class="row">
+          <input class="input" type="date" th:field="*{openDate}">
+          <input class="input" type="time" th:field="*{openTime}" style="max-width:120px">
+        </div>
+        <p class="muted" id="dateNote"></p>
+      </div>
+
+      <div class="field">
+        <label for="title">ポスト名<span class="req">必須</span></label>
+        <input class="input" th:field="*{title}" maxlength="20">
+        <p class="msg err" th:errors="*{title}"></p>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg btn-block">つくる</button>
+    </form>
+  </main>
+
+  <script th:src="@{/js/theme-art.js}"></script>
+  <script th:inline="javascript">
+    // 서버가 계산한 테마별 개봉일 기본값 {shogatsu: {date, time}, ...}. 誕生日 은 생일이 없으면 date 가 ''
+    var defaults = /*[[${themeDefaults}]]*/ {};
+    var current = /*[[${#strings.toLowerCase(postRequestDTO.theme)}]]*/ 'shogatsu';
+
+    $('.choice').each(function () { $(this).find('.ico').html(THEME_ICONS[$(this).data('theme')]); });
+
+    // keep = true 이면 誕生日 입력값을 그대로 둔다 (검증 실패로 돌아왔을 때)
+    function changeTheme(key, keep) {
+      current = key;
+      var t = THEMES[key], d = defaults[key];
+      $('.choice').removeClass('on').attr('aria-checked', 'false').filter('[data-theme="' + key + '"]').addClass('on').attr('aria-checked', 'true');
+      $('#theme').val(key.toUpperCase());
+      $('#preview').attr('class', 'preview theme-' + key);
+      drawBackground($('#pvBg'), key);
+      drawDecos($('#pvPost'), t.decos);
+      $('#pvBadge').text(t.label);
+      if (t.fixed || !keep || !$('#openDate').val()) {
+        $('#openDate').val(d.date);
+        $('#openTime').val(d.time);
+      }
+      $('#openDate, #openTime').prop('disabled', t.fixed);
+      $('#dateNote').text(!t.fixed && !d.date ? '誕生日が未登録です。開封日を選んでください（1年以内）。' : t.note);
+      refreshText();
+    }
+    function refreshText() {
+      var v = $('#openDate').val();
+      if (v) {
+        var p = v.split('-');
+        $('#pvDate').text(p[0] + '年' + Number(p[1]) + '月' + Number(p[2]) + '日 ' + ($('#openTime').val() || '00:00') + ' に開封');
+      } else {
+        $('#pvDate').text('開封日を選んでください');
+      }
+      $('#pvTitle').text($('#title').val() || 'ポスト名');
+    }
+
+    $('.choice').on('click', function () { changeTheme($(this).data('theme'), false); });
+    $('#openDate, #openTime, #title').on('input change', refreshText);
+    $('#createForm').on('submit', function (e) {
+      if (!$.trim($('#title').val())) { e.preventDefault(); toast('ポスト名を入力してください'); }
+    });
+    changeTheme(current, true);
+  </script>
+</body>
+</html>

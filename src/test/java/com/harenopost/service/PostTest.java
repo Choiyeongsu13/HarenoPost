@@ -13,79 +13,79 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.harenopost.dto.PostForm;
-import com.harenopost.entity.Deco;
-import com.harenopost.entity.Post;
-import com.harenopost.entity.Theme;
+import com.harenopost.dto.Deco;
+import com.harenopost.dto.PostRequestDTO;
+import com.harenopost.dto.Theme;
+import com.harenopost.entity.PostEntity;
 import com.harenopost.exception.BusinessException;
 import com.harenopost.exception.ErrorCode;
 
 class PostTest {
 
-	private Post post(Theme theme, LocalDateTime openDate) {
-		return Post.create("abcd1234", 1L, "テスト", theme, openDate, "なまえ");
+	private PostEntity post(Theme theme, LocalDateTime openDate) {
+		return PostEntity.builder().code("abcd1234").userIdx(1L).title("テスト").theme(theme).openDate(openDate).nameTag("なまえ").build();
 	}
 
 	@Test
 	void 만들면_테마_장식_3개가_기본값() {
-		Post p = post(Theme.SHOGATSU, LocalDateTime.now().plusDays(10));
+		PostEntity p = post(Theme.SHOGATSU, LocalDateTime.now().plusDays(10));
 		assertEquals(List.of("KAGAMI", "SHIMEKAZARI", "KADOMATSU"), p.getDecoCodes());
 		assertEquals("KAGAMI,SHIMEKAZARI,KADOMATSU", p.getDecos());
 	}
 
 	@Test
 	void 꾸미기는_슬롯_순으로_저장() {
-		Post p = post(Theme.SHOGATSU, LocalDateTime.now().plusDays(10));
-		p.decorate(List.of(Deco.KADOMATSU, Deco.KAGAMI), "ゆうすけ");
+		PostEntity p = post(Theme.SHOGATSU, LocalDateTime.now().plusDays(10));
+		p.postDecorate(List.of(Deco.KADOMATSU, Deco.KAGAMI), "ゆうすけ");
 		assertEquals("KAGAMI,KADOMATSU", p.getDecos());
 		assertEquals("ゆうすけ", p.getNameTag());
 	}
 
 	@Test
 	void 장식을_모두_빼면_null() {
-		Post p = post(Theme.BIRTHDAY, LocalDateTime.now().plusDays(10));
-		p.decorate(List.of(), null);
+		PostEntity p = post(Theme.BIRTHDAY, LocalDateTime.now().plusDays(10));
+		p.postDecorate(List.of(), null);
 		assertNull(p.getDecos());
 		assertTrue(p.getDecoList().isEmpty());
 	}
 
 	@Test
 	void 다른_테마_장식이나_중복은_INVALID_DECO() {
-		Post p = post(Theme.SHOGATSU, LocalDateTime.now().plusDays(10));
-		BusinessException e1 = assertThrows(BusinessException.class, () -> p.decorate(List.of(Deco.SANTA), null));
+		PostEntity p = post(Theme.SHOGATSU, LocalDateTime.now().plusDays(10));
+		BusinessException e1 = assertThrows(BusinessException.class, () -> p.postDecorate(List.of(Deco.SANTA), null));
 		assertEquals(ErrorCode.INVALID_DECO, e1.getErrorCode());
-		BusinessException e2 = assertThrows(BusinessException.class, () -> p.decorate(List.of(Deco.KAGAMI, Deco.KAGAMI), null));
+		BusinessException e2 = assertThrows(BusinessException.class, () -> p.postDecorate(List.of(Deco.KAGAMI, Deco.KAGAMI), null));
 		assertEquals(ErrorCode.INVALID_DECO, e2.getErrorCode());
 		List<Deco> withNull = new ArrayList<>();
 		withNull.add(null); // 없는 코드
-		assertThrows(BusinessException.class, () -> p.decorate(withNull, null));
+		assertThrows(BusinessException.class, () -> p.postDecorate(withNull, null));
 	}
 
 	@Test
 	void 개봉_후에는_꾸미기_설정_불가() {
-		Post p = post(Theme.CHRISTMAS, LocalDateTime.now().minusMinutes(1));
+		PostEntity p = post(Theme.CHRISTMAS, LocalDateTime.now().minusMinutes(1));
 		assertTrue(p.isOpened());
-		BusinessException e = assertThrows(BusinessException.class, () -> p.decorate(List.of(Deco.SANTA), null));
+		BusinessException e = assertThrows(BusinessException.class, () -> p.postDecorate(List.of(Deco.SANTA), null));
 		assertEquals(ErrorCode.ALREADY_OPENED, e.getErrorCode());
-		assertThrows(BusinessException.class, () -> p.changeSettings("x", Theme.CHRISTMAS, LocalDateTime.now().plusDays(1)));
+		assertThrows(BusinessException.class, () -> p.postModify("x", Theme.CHRISTMAS, LocalDateTime.now().plusDays(1)));
 	}
 
 	@Test
 	void 기념일을_바꾸면_장식_초기화() {
-		Post p = post(Theme.SHOGATSU, LocalDateTime.now().plusDays(10));
-		p.decorate(List.of(Deco.KAGAMI), null);
-		p.changeSettings("新しい名前", Theme.CHRISTMAS, LocalDateTime.now().plusDays(20));
+		PostEntity p = post(Theme.SHOGATSU, LocalDateTime.now().plusDays(10));
+		p.postDecorate(List.of(Deco.KAGAMI), null);
+		p.postModify("新しい名前", Theme.CHRISTMAS, LocalDateTime.now().plusDays(20));
 		assertEquals(List.of("SANTA", "WREATH", "PRESENT"), p.getDecoCodes());
 
 		// 같은 기념일이면 장식 유지
-		p.decorate(List.of(Deco.WREATH), null);
-		p.changeSettings("名前", Theme.CHRISTMAS, LocalDateTime.now().plusDays(20));
+		p.postDecorate(List.of(Deco.WREATH), null);
+		p.postModify("名前", Theme.CHRISTMAS, LocalDateTime.now().plusDays(20));
 		assertEquals(List.of("WREATH"), p.getDecoCodes());
 	}
 
 	@Test
 	void 주인_검사() {
-		Post p = post(Theme.SHOGATSU, LocalDateTime.now().plusDays(10));
+		PostEntity p = post(Theme.SHOGATSU, LocalDateTime.now().plusDays(10));
 		assertTrue(p.isOwner(1L));
 		assertTrue(!p.isOwner(2L));
 		assertTrue(!p.isOwner(null));
@@ -96,8 +96,8 @@ class PostTest {
 	private final PostService service = new PostService(null, null);
 	private final LocalDateTime now = LocalDateTime.of(2026, 10, 12, 15, 0);
 
-	private PostForm form(Theme theme, LocalDate date, LocalTime time) {
-		PostForm f = new PostForm();
+	private PostRequestDTO form(Theme theme, LocalDate date, LocalTime time) {
+		PostRequestDTO f = new PostRequestDTO();
 		f.setTheme(theme);
 		f.setOpenDate(date);
 		f.setOpenTime(time);

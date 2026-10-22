@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head('ハレの日ポスト', ~{::style})}">
+<head th:replace="~{Include/head :: head('ハレの日ポスト', ~{::style})}">
   <style>
     .hero { min-height: calc(100vh - 140px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px; padding: 24px 20px 40px; }
     .halo { position: relative; width: 320px; height: 360px; display: flex; align-items: flex-end; justify-content: center; }
@@ -9,7 +9,7 @@
   </style>
 </head>
 <body>
-  <header th:replace="~{fragments/header :: header}"></header>
+  <header th:replace="~{Include/topmenu :: topmenu}"></header>
 
   <main class="hero">
     <div class="halo" aria-hidden="true">
@@ -27,7 +27,7 @@
     </div>
     <div class="center" style="display:flex;flex-direction:column;align-items:center;gap:18px">
       <p>メッセージをあつめて、ハレの日にひらこう。</p>
-      <a th:href="@{/post/new}" class="btn btn-primary btn-lg">ポストをつくる</a>
+      <a th:href="@{/Post/post_write}" class="btn btn-primary btn-lg">ポストをつくる</a>
     </div>
   </main>
 </body>

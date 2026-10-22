@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{Include/head :: head('新規登録 | ハレの日ポスト', ~{})}"></head>
+<body>
+  <header class="header">
+    <a th:href="@{/}" class="logo">ハレの日ポスト</a>
+    <nav class="nav"><a th:href="@{/User/user_login}" class="btn">ログイン</a></nav>
+  </header>
+
+  <main class="page">
+    <h1 class="page-title center">新規登録</h1>
+    <p class="page-lead center">メール認証をして、アカウントをつくりましょう。</p>
+
+    <form class="panel" id="signupForm" th:action="@{/User/user_insert}" th:object="${userRequestDTO}" method="post" novalidate>
+      <p class="msg err" th:each="err : ${#fields.globalErrors()}" th:text="${err}" role="alert"></p>
+
+      <div class="field">
+        <label for="userid">ID<span class="req">必須</span></label>
+        <div class="row">
+          <input class="input" th:field="*{userid}" placeholder="英小文字・数字 4〜20文字" autocomplete="username">
+          <button type="button" class="btn btn-sm" id="checkId">重複確認</button>
+        </div>
+        <p class="msg err" id="idMsg" th:text="${#strings.listJoin(#fields.errors('userid'), ' ')}"></p>
+      </div>
+
+      <div class="field">
+        <label for="passwd">パスワード<span class="req">必須</span></label>
+        <input class="input" type="password" th:field="*{passwd}" placeholder="英字と数字を含む 8〜20文字" autocomplete="new-password">
+        <p class="msg err" id="passwdMsg" th:text="${#strings.listJoin(#fields.errors('passwd'), ' ')}"></p>
+      </div>
+      <div class="field">
+        <label for="passwdConfirm">パスワード（確認）<span class="req">必須</span></label>
+        <input class="input" type="password" th:field="*{passwdConfirm}" autocomplete="new-password">
+        <p class="msg err" id="pwMsg" th:text="${#strings.listJoin(#fields.errors('passwdConfirm'), ' ') + ' ' + #strings.listJoin(#fields.errors('passwdSame'), ' ')}"></p>
+      </div>
+
+      <div class="field">
+        <label for="nickname">ニックネーム<span class="req">必須</span></label>
+        <input class="input" th:field="*{nickname}" maxlength="10" placeholder="ポスト名「〇〇のポスト」に使われます">
+        <p class="msg err" th:errors="*{nickname}"></p>
+      </div>
+
+      <div class="field">
+        <label for="email">メールアドレス<span class="req">必須</span></label>
+        <div class="row">
+          <input class="input" type="email" th:field="*{email}" placeholder="example@mail.com" autocomplete="email">
+          <button type="button" class="btn btn-sm" id="sendCode">認証コード送信</button>
+        </div>
+        <div class="row" id="codeRow" style="display:none;margin-top:8px">
+          <input class="input" id="code" maxlength="6" inputmode="numeric" placeholder="6桁のコード">
+          <button type="button" class="btn btn-sm" id="verify">確認</button>
+        </div>
+        <p class="msg err" id="mailMsg" th:text="${#strings.listJoin(#fields.errors('email'), ' ')}"></p>
+      </div>
+
+      <div class="field">
+        <label for="birthday">誕生日<span class="muted">（任意）</span></label>
+        <input class="input" type="date" th:field="*{birthday}">
+        <p class="muted">誕生日ポストの開封日に使われます。</p>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg btn-block" id="submitBtn" disabled>登録する</button>
+      <p class="muted center" style="margin-top:12px">ID確認とメール認証を終えると登録できます。</p>
+    </form>
+  </main>
+
+  <script th:inline="javascript">
+    var PASSWD_RULE = /^(?=.*[A-Za-z])(?=.*[0-9]).{8,20}$/;
+    // 서버 검증에 걸려 다시 보여 줄 때도, 이미 확인한 ID·메일은 확인 상태를 유지한다
+    var idOk = /*[[${idChecked == true}]]*/ false;
+    var mailOk = /*[[${mailVerified == true}]]*/ false;
+    if (idOk) { $('#idMsg').attr('class', 'msg ok').text('使用できるIDです'); }
+    if (mailOk) { $('#mailMsg').attr('class', 'msg ok').text('メール認証が完了しました'); }
+
+    function refresh() { $('#submitBtn').prop('disabled', !(idOk && mailOk)); }
+    function show($el, ok, text) { $el.attr('class', ok ? 'msg ok' : 'msg err').text(text); }
+
+    // ID 중복 확인 ("true" = 이미 사용 중)
+    $('#checkId').on('click', function () {
+      var userid = $('#userid').val();
+      if (!/^[a-z][a-z0-9]{3,19}$/.test(userid)) { idOk = false; show($('#idMsg'), false, 'IDは英小文字・数字 4〜20文字（先頭は英字）で入力してください'); refresh(); return; }
+      $.ajax({
+        url: '/User/user_idCheck',
+        type: 'post',
+        data: { userid: userid },
+        success: function (result) {
+          if (result == 'false') {
+            idOk = true;
+            show($('#idMsg'), true, '使用できるIDです');
+          } else {
+            idOk = false;
+            show($('#idMsg'), false, 'このIDはすでに使われています');
+          }
+          refresh();
+        },
+        error: function (xhr) { idOk = false; show($('#idMsg'), false, errMsg(xhr)); refresh(); }
+      });
+    });
+    // 확인 후 아이디를 바꾸면 다시 확인
+    $('#userid').on('input', function () { idOk = false; $('#idMsg').text(''); refresh(); });
+
+    // 비밀번호 규칙은 입력하는 동안 바로 알려 준다
+    $('#passwd').on('input', function () {
+      var v = $(this).val();
+      if (!v) { $('#passwdMsg').text(''); return; }
+      var ok = PASSWD_RULE.test(v);
+      show($('#passwdMsg'), ok, ok ? '使用できるパスワードです' : 'パスワードは英字と数字を含む 8〜20文字で入力してください');
+    });
+    // 보내기 전에 한 번 더 확인 (서버에서도 다시 검사한다)
+    $('#signupForm').on('submit', function (e) {
+      if (!PASSWD_RULE.test($('#passwd').val())) {
+        e.preventDefault();
+        show($('#passwdMsg'), false, 'パスワードは英字と数字を含む 8〜20文字で入力してください');
+        $('#passwd').focus();
+      } else if ($('#passwd').val() !== $('#passwdConfirm').val()) {
+        e.preventDefault();
+        show($('#pwMsg'), false, 'パスワードが一致しません');
+        $('#passwdConfirm').focus();
+      }
+    });
+
+    $('#passwd, #passwdConfirm').on('input', function () {
+      if (!$('#passwdConfirm').val()) { $('#pwMsg').text(''); return; }
+      var same = $('#passwd').val() === $('#passwdConfirm').val();
+      show($('#pwMsg'), same, same ? 'パスワードが一致しました' : 'パスワードが一致しません');
+    });
+
+    // 메일 인증
+    $('#sendCode').on('click', function () {
+      var email = $.trim($('#email').val());
+      if (!email || !$('#email')[0].checkValidity()) { show($('#mailMsg'), false, 'メールアドレスの形式を確認してください'); return; }
+      var $btn = $(this).prop('disabled', true);
+      $.ajax({
+        url: '/User/user_mailSend',
+        type: 'post',
+        data: { email: email },
+        success: function (result) { $('#codeRow').show(); $('#code').val('').focus(); show($('#mailMsg'), true, result); },
+        error: function (xhr) { show($('#mailMsg'), false, errMsg(xhr)); },
+        complete: function () { $btn.prop('disabled', false); }
+      });
+    });
+    $('#verify').on('click', function () {
+      $.ajax({
+        url: '/User/user_mailCheck',
+        type: 'post',
+        data: { email: $.trim($('#email').val()), code: $.trim($('#code').val()) },
+        success: function (result) { mailOk = true; $('#codeRow').hide(); show($('#mailMsg'), true, result); refresh(); },
+        error: function (xhr) { mailOk = false; show($('#mailMsg'), false, errMsg(xhr)); refresh(); }
+      });
+    });
+    // 인증 후 메일 주소를 바꾸면 다시 인증
+    $('#email').on('input', function () { mailOk = false; $('#codeRow').hide(); $('#mailMsg').text(''); refresh(); });
+
+    refresh();
+  </script>
+</body>
+</html>

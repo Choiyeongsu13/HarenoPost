@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{Include/head :: head('カードデザイン管理 | ハレの日ポスト', ~{::style})}">
+  <style>
+    .admin-tabs { display: flex; gap: 8px; margin: 0 0 16px; }
+    .table-wrap { overflow-x: auto; }
+    table.list { width: 100%; border-collapse: collapse; font-size: 14px; }
+    table.list th, table.list td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+    table.list th { color: var(--sub); font-weight: 700; white-space: nowrap; }
+    .thumb { width: 72px; aspect-ratio: 4 / 3; border-radius: 8px; background: #F7F4EF center / cover no-repeat; border: 1px solid var(--line); }
+    .input-sm { min-height: 36px; padding: 0 8px; width: 72px; }
+    select.input { padding: 0 10px; }
+    .ops { display: flex; gap: 6px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <header th:replace="~{Include/topmenu :: topmenu}"></header>
+
+  <main class="page-wide">
+    <h1 class="page-title">管理</h1>
+    <div class="admin-tabs">
+      <a th:href="@{/Admin/admin_reports}" class="btn btn-sm">通報</a>
+      <a th:href="@{/Admin/admin_designs}" class="btn btn-sm btn-primary">カードデザイン</a>
+    </div>
+
+    <!--/* 등록 */-->
+    <form class="panel" th:action="@{/Admin/admin_designs}" method="post" enctype="multipart/form-data">
+      <h2>デザインを登録</h2>
+      <div class="field">
+        <label for="name">デザイン名<span class="req">必須</span></label>
+        <input class="input" id="name" name="name" maxlength="50" required>
+      </div>
+      <div class="field">
+        <label for="theme">記念日</label>
+        <select class="input" id="theme" name="theme">
+          <option value="">共通（すべての記念日）</option>
+          <option th:each="t : ${themes}" th:value="${t.name()}" th:text="${t.label}"></option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="file">画像<span class="req">必須</span></label>
+        <input class="input" type="file" id="file" name="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" required style="padding:10px">
+        <p class="muted">png・jpg・webp、2MB まで</p>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">登録する</button>
+    </form>
+
+    <!--/* 목록 */-->
+    <section class="panel">
+      <h2>デザイン一覧</h2>
+      <p class="muted" th:if="${#lists.isEmpty(dList)}">登録されたデザインはありません。</p>
+      <div class="table-wrap" th:unless="${#lists.isEmpty(dList)}">
+        <table class="list">
+          <thead>
+            <tr><th>画像</th><th>名前</th><th>記念日</th><th>順番</th><th>使用</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="d : ${dList}" th:attr="data-idx=${d.designIdx}">
+              <td><div class="thumb" th:style="|background-image:url('${d.imageUrl}')|"></div></td>
+              <td th:text="${d.name}"></td>
+              <td th:text="${d.themeLabel}"></td>
+              <td><input class="input input-sm js-sort" type="number" min="0" th:value="${d.sortOrder}"></td>
+              <td>
+                <select class="input input-sm js-use" style="width:80px">
+                  <option value="Y" th:selected="${d.useYn == 'Y'}">使う</option>
+                  <option value="N" th:selected="${d.useYn == 'N'}">使わない</option>
+                </select>
+              </td>
+              <td>
+                <div class="ops">
+                  <button type="button" class="btn btn-sm js-save">保存</button>
+                  <button type="button" class="btn btn-sm js-delete">削除</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    //사용 여부·순서 저장
+    $(document).on('click', '.js-save', function () {
+      var $tr = $(this).closest('tr');
+      $.ajax({
+        url: '/Admin/admin_designModify',
+        type: 'post',
+        data: { designIdx: $tr.attr('data-idx'), useYn: $tr.find('.js-use').val(), sortOrder: $tr.find('.js-sort').val() || 0 },
+        success: function (result) { toast(result); },
+        error: apiError
+      });
+    });
+    //삭제 (이 디자인을 쓴 카드는 기본 모양으로 바뀐다)
+    $(document).on('click', '.js-delete', function () {
+      if (!confirm('このデザインを削除しますか？使っているカードは基本のデザインになります。')) { return; }
+      var $tr = $(this).closest('tr');
+      $.ajax({
+        url: '/Admin/admin_designDelete',
+        type: 'post',
+        data: { designIdx: $tr.attr('data-idx') },
+        success: function (result) { $tr.fadeOut(200); toast(result); },
+        error: apiError
+      });
+    });
+  </script>
+</body>
+</html>

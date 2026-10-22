@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+  <header class="header" th:fragment="topmenu">
+    <a th:href="@{/}" class="logo">ハレの日ポスト</a>
+    <nav class="nav">
+      <a sec:authorize="isAnonymous()" th:href="@{/User/user_login}" class="btn">ログイン</a>
+      <th:block sec:authorize="isAuthenticated()">
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/Admin/admin_reports}" class="btn">管理</a>
+        <a th:href="@{/User/user_mypage}" class="btn">マイページ</a>
+        <form th:action="@{/User/user_logout}" method="post" style="margin:0">
+          <button type="submit" class="btn">ログアウト</button>
+        </form>
+      </th:block>
+    </nav>
+  </header>
+</body>
+</html>

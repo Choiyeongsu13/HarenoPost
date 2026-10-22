@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{Include/head :: head('通報管理 | ハレの日ポスト', ~{::style})}">
+  <style>
+    .admin-tabs { display: flex; gap: 8px; margin: 0 0 16px; }
+    .table-wrap { overflow-x: auto; }
+    table.list { width: 100%; border-collapse: collapse; font-size: 14px; }
+    table.list th, table.list td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    table.list th { color: var(--sub); font-weight: 700; white-space: nowrap; }
+    table.list td.contents { white-space: pre-line; min-width: 180px; }
+    .ops { display: flex; flex-direction: column; gap: 6px; }
+  </style>
+</head>
+<body>
+  <header th:replace="~{Include/topmenu :: topmenu}"></header>
+
+  <main class="page-wide">
+    <h1 class="page-title">管理</h1>
+    <div class="admin-tabs">
+      <a th:href="@{/Admin/admin_reports}" class="btn btn-sm btn-primary">通報</a>
+      <a th:href="@{/Admin/admin_designs}" class="btn btn-sm">カードデザイン</a>
+    </div>
+
+    <section class="panel">
+      <div class="chips" style="margin-bottom:16px">
+        <a th:href="@{/Admin/admin_reports(status='WAIT')}" class="chip" th:classappend="${status == 'WAIT'} ? 'on' : ''" style="display:inline-flex;align-items:center;text-decoration:none">未処理</a>
+        <a th:href="@{/Admin/admin_reports(status='DONE')}" class="chip" th:classappend="${status == 'DONE'} ? 'on' : ''" style="display:inline-flex;align-items:center;text-decoration:none">処理済み</a>
+      </div>
+
+      <p class="muted" th:if="${#lists.isEmpty(rList)}">通報はありません。</p>
+      <div class="table-wrap" th:unless="${#lists.isEmpty(rList)}">
+        <table class="list">
+          <thead>
+            <tr><th>通報日</th><th>理由</th><th>カード本文</th><th>差出人</th><th>ポスト</th><th th:if="${status == 'WAIT'}">処理</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="r : ${rList}" th:attr="data-report=${r.reportIdx},data-card=${r.cardIdx}">
+              <td th:text="${#temporals.format(r.regdate, 'M/d H:mm')}"></td>
+              <td th:text="${r.reason}"></td>
+              <td class="contents" th:text="${r.contents}"></td>
+              <td th:text="${r.senderName}"></td>
+              <td><a th:href="@{/post/{code}(code=${r.postCode})}" th:text="${r.postTitle}"></a></td>
+              <td th:if="${status == 'WAIT'}">
+                <div class="ops">
+                  <button type="button" class="btn btn-sm js-done">処理済み</button>
+                  <button type="button" class="btn btn-sm btn-primary js-delete">カード削除</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    //처리 완료
+    $(document).on('click', '.js-done', function () {
+      var $tr = $(this).closest('tr');
+      $.ajax({
+        url: '/Admin/admin_reportDone',
+        type: 'post',
+        data: { reportIdx: $tr.attr('data-report') },
+        success: function (result) { $tr.fadeOut(200); toast(result); },
+        error: apiError
+      });
+    });
+    //카드 삭제 (신고도 함께 지워진다)
+    $(document).on('click', '.js-delete', function () {
+      if (!confirm('このカードを削除しますか？元に戻せません。')) { return; }
+      var $tr = $(this).closest('tr');
+      $.ajax({
+        url: '/Admin/admin_cardDelete',
+        type: 'post',
+        data: { cardIdx: $tr.attr('data-card') },
+        success: function (result) { $tr.fadeOut(200); toast(result); },
+        error: apiError
+      });
+    });
+  </script>
+</body>
+</html>
