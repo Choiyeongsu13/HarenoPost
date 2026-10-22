@@ -35,37 +35,41 @@
 
 ## 4. 패키지 구조
 
-계층별로 나눈다(학습 저장소 exSampleJPA 와 같은 구조). 클래스 이름은 그대로 둔다.
+학습 저장소 **exSampleJPA 의 코드 형태**를 따른다(계층별 패키지, 이름 규칙, URL, 주석).
 
 ```
 com.harenopost
  ├─ HarenoPostApplication.java
- ├─ controller  IndexController, UserController, UserApiController, MailApiController,
- │              PostController, PostApiController, (CardApiController, AdminController, AdminApiController)
- ├─ dto         ApiResponse, CustomUserDetails, SignupForm, ProfileForm, PasswordForm, WithdrawForm,
- │              PostForm, DecorateRequest, DecorateResponse, MyPostDto, PostViewDto, EnvelopeDto
- ├─ entity      User, Post, Card, Design, Report, Theme(enum), Deco(enum)
+ ├─ controller  IndexController, UserController, PostController, CardController, AdminController
+ ├─ dto         UserRequestDTO, UserModifyRequestDTO, UserResponseDTO, PostRequestDTO, PostResponseDTO,
+ │              CardRequestDTO, CardResponseDTO(본문 포함, 카드 목록 전용), EnvelopeResponseDTO(본문 없음),
+ │              DesignResponseDTO, ReportResponseDTO, CustomUserDetails, Role(enum), Theme(enum), Deco(enum)
+ ├─ entity      UserEntity, PostEntity, CardEntity, DesignEntity, ReportEntity
  ├─ repository  UserRepository, PostRepository, CardRepository, DesignRepository, ReportRepository
  ├─ service     UserService, CustomUserDetailsService, EmailService, MailAuthService, PostService, CardService,
- │              (DesignService, ReportService)
+ │              DesignService, ReportService
  ├─ exception   BusinessException, ErrorCode, GlobalExceptionHandler
  ├─ config      SecurityConfig, WebConfig(업로드 경로 매핑), LoginSuccessHandler
  └─ util        SecurityUtil
 ```
 
-괄호 안은 아직 만들지 않은 클래스. 테스트도 같은 패키지에 둔다(`entity/ThemeTest`, `service/PostTest`).
+테스트도 같은 패키지에 둔다(`dto/ThemeTest`, `service/PostTest`).
 
-템플릿: `src/main/resources/templates/{index, user/*, post/*, card/*, admin/*, fragments/*}.html`
+템플릿: `src/main/resources/templates/{index, User/*, Post/*, Card/*, Admin/*, Include/*, error/*}.html`
+(파일 이름은 `user_insert.html` 처럼 소문자_밑줄. 폴더는 대문자로 시작 — Linux 는 대소문자를 구분한다)
 
-## 5. 코딩 규칙
+## 5. 코딩 규칙 (exSampleJPA 형태)
 
-- Controller(화면) → `XxxController`, ajax(JSON) → `XxxApiController` (`@RestController`, `/api/**`)
-- Entity는 setter 대신 의미 있는 메서드(`post.decorate(...)`, `card.markRead()`)
-- 요청/응답은 DTO로 분리하고 `@Valid` 로 검사. Entity를 그대로 JSON으로 내보내지 않는다
-- JSON 응답 형식은 `docs/06_api.md` 의 `ApiResponse` 를 따른다
-- 서비스 메서드에 `@Transactional`, 조회는 `@Transactional(readOnly = true)`
+- **Entity**: `XxxEntity`. `@Entity @Table @NoArgsConstructor @Getter`, `@Builder` 생성자, setter 대신 의미 있는 메서드(`postEntity.postDecorate(...)`, `cardEntity.cardRead()`)
+- **DTO**: 입력은 `XxxRequestDTO`(`@Setter @Getter`, `@Valid` 검사, `toEntity()`), 출력은 `XxxResponseDTO`(엔티티를 받는 생성자). 엔티티를 화면·응답에 그대로 내보내지 않는다
+- **Repository**: `JpaRepository<XxxEntity, Long>`, 메서드 위에 `//1. ...` 번호 주석
+- **Service**: 메서드 이름은 `userInsert`, `postWrite`, `postView`, `postModifyPro` 처럼 `도메인+동작`. `@Transactional`, 조회는 `@Transactional(readOnly = true)`
+- **Controller**: `@Controller @RequiredArgsConstructor @RequestMapping("User")`, `Logger log` + 메서드마다 `log.info("User Call : user_insert")`. 폼은 `userInsert`(GET), 처리는 `userInsertPro`(POST)
+- **ajax**: 같은 컨트롤러에 `@ResponseBody` 로 두고 **문자열**을 돌려준다(성공 메시지, ID 중복은 `"true"`/`"false"`). 실패는 ErrorCode 상태 코드 + 메시지 문자열. JSON·`/api/**` 는 쓰지 않는다 (`docs/06_api.md`)
+- **주석**: `//등록 처리` 처럼 `//` 한 줄 주석
 - 사용자 입력은 Thymeleaf `th:text` 로만 출력(`th:utext` 금지), jQuery는 `.text()` 사용(XSS)
-- 모든 POST ajax는 CSRF 헤더를 보낸다(`fragments/head.html` 의 meta + `$.ajaxSetup`)
+- 모든 POST ajax는 CSRF 헤더를 보낸다(`Include/head.html` 의 meta + `$.ajaxSetup`)
+- JS 가 메시지를 넣는 태그에는 `th:errors` 를 쓰지 않는다(에러가 없으면 태그가 지워진다). `th:text="${#strings.listJoin(#fields.errors('x'), ' ')}"` 를 쓴다
 - 업로드 파일은 외부 절대경로(`app.upload-dir`)에 UUID 파일명으로 저장. `getRealPath` 금지
 
 ## 6. 작업 순서

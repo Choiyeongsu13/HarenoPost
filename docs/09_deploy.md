@@ -156,23 +156,58 @@ spring:
 > 처음에는 1521 을 `127.0.0.1` 에만 열고 SSH 터널(`ssh -p 2222 ... -N -L 1521:localhost:1521 ...`)로 접속했지만,
 > 매번 터널을 켜야 해서 2200 직접 접속으로 바꿨다. 다시 닫고 싶으면 `-p 127.0.0.1:2200:1521` 로 컨테이너를 다시 만들고 보안 그룹 2200 규칙을 지운 뒤 터널을 쓴다.
 
-## 6. 앱 실행 (10/24)
+## 6. 앱 실행 (2026-10-19 배포 완료)
 
-```bash
-mkdir -p ~/harenopost/upload
-export DB_URL='jdbc:oracle:thin:@localhost:2200/XEPDB1'
-export DB_USERNAME=harenopost
-export DB_PASSWORD='앱비밀번호'
-export MAIL_USERNAME='보내는주소@gmail.com'
-export MAIL_PASSWORD='구글앱비밀번호'
-export UPLOAD_DIR=/home/ec2-user/harenopost/upload
+공개 주소: **http://43.200.133.12:8080/** (보안 그룹 8080 전체 허용)
 
-nohup java -Xms256m -Xmx512m -Duser.timezone=Asia/Tokyo \
-  -jar HarenoPost-1.0.jar --spring.profiles.active=prod > app.log 2>&1 &
+### 서버 구성
+
+| 파일 | 내용 |
+|---|---|
+| `~/harenopost/HarenoPost.jar` | `./gradlew bootJar` 결과. **`application-secret.yml` 은 jar 에 넣지 않는다**(build.gradle 의 bootJar exclude) |
+| `~/harenopost/env` (권한 600) | 비밀 정보. `SPRING_PROFILES_ACTIVE=prod`, `DB_URL=jdbc:oracle:thin:@localhost:2200/XEPDB1`, `DB_USERNAME`, `DB_PASSWORD`, `MAIL_USERNAME`, `MAIL_PASSWORD`(공백이 있으면 `"..."`), `UPLOAD_DIR=/home/ec2-user/harenopost/upload` |
+| `~/harenopost/upload/` | 카드 디자인 이미지 (UUID 파일명) |
+| `/etc/systemd/system/harenopost.service` | 아래 서비스. 재부팅·비정상 종료 시 자동으로 다시 뜬다 |
+
+```ini
+[Service]
+User=ec2-user
+WorkingDirectory=/home/ec2-user/harenopost
+EnvironmentFile=/home/ec2-user/harenopost/env
+ExecStart=/usr/bin/java -Xms256m -Xmx512m -Duser.timezone=Asia/Tokyo -jar /home/ec2-user/harenopost/HarenoPost.jar
+Restart=on-failure
+RestartSec=15        # 재부팅 직후 Oracle 이 아직 뜨는 중이면 15초 뒤 다시 시도
 ```
 
-- `-Xmx512m`: Oracle 과 메모리를 나눠 쓰기 위해 힙을 제한한다
-- 환경변수는 `~/.bashrc` 가 아닌 별도 파일(`~/harenopost/env`, 권한 600)에 두고 `source` 하면 git 이나 기록에 남지 않는다
+- `-Xmx512m`: Oracle 과 메모리를 나눠 쓰기 위해 힙을 제한한다 (배포 후 available 약 330MB, 스왑 거의 안 씀)
+- env 파일은 셸 명령줄에 비밀번호를 쓰지 않도록 `scp` 로 올린다. Windows PowerShell 에서 `Get-Content | ssh` 로 보내면 맨 앞에 BOM 이 붙어 첫 변수 이름이 깨지므로 쓰지 않는다
+
+### 다시 배포할 때 (PC PowerShell)
+
+```bash
+./gradlew bootJar
+```
+
+```bash
+scp -P 2222 -i "$env:USERPROFILE\.ssh\harenopost" build\libs\HarenoPost.jar ec2-user@43.200.133.12:harenopost/HarenoPost.jar
+```
+
+```bash
+ssh -p 2222 -i "$env:USERPROFILE\.ssh\harenopost" ec2-user@43.200.133.12 'sudo systemctl restart harenopost'
+```
+
+20초쯤 뒤 `http://43.200.133.12:8080/` 확인. 로그: `sudo journalctl -u harenopost -f`
+
+### 기본 카드 디자인
+
+배포 서버의 관리자 화면(`/Admin/admin_designs`)에서 테마별 2장씩 등록했다(お正月: 紅白·金びょうぶ / 誕生日: いちご·そらいろ / クリスマス: ヒイラギ·星空).
+로컬 PC 에서 올리면 이미지 파일이 PC 에만 저장되고 DB 는 서버와 같이 쓰므로, **디자인은 반드시 서버에서 올린다.**
+
+### 학교 네트워크에서 서버를 시험할 때
+
+학교 방화벽이 평문 HTTP 로 비밀번호가 담긴 폼을 보내면 그 연결을 몇 분간 끊는 경우가 있었다(서버는 정상).
+자동 점검은 SSH 터널(`ssh -p 2222 ... -N -L 18080:localhost:8080 ...`)로 `http://localhost:18080` 에 보내서 했다.
+실제 서비스로 쓰려면 도메인 + HTTPS(nginx + Let's Encrypt)를 붙이는 것이 좋다.
 
 ## 문제가 생기면
 

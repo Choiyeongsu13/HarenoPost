@@ -80,7 +80,7 @@ erDiagram
 ```java
 @Entity @Table(name = "tbl_post")
 @Getter @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Post {
+public class PostEntity {
     @Id
     @SequenceGenerator(name = "seq_post_gen", sequenceName = "seq_post", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_post_gen")
@@ -113,4 +113,4 @@ public class Post {
   - `CardRepository.findByPostIdxOrderByRegdateAsc(Long)`
   - `CardRepository.existsByIpAndRegdateAfter(String, LocalDateTime)` — 도배 검사(1분 전 시각)
   - `ReportRepository.existsByCardIdxAndStatus(Long, String)`
-- 봉투 목록용 DTO(`EnvelopeDto`)에는 `cardIdx, senderName, designImage, isRead` 만 담는다. **`contents` 필드를 두지 않는다.**
+- 봉투 목록용 DTO(`EnvelopeResponseDTO`)에는 `cardIdx, senderName, imageUrl, read` 만 담는다. **`contents` 필드를 두지 않는다.**

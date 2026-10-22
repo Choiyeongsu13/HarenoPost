@@ -15,22 +15,26 @@
 
 ## 화면 대응표
 
+템플릿 폴더·파일 이름은 exSampleJPA 형태(`User/user_insert.html`). 공통 조각은 `Include/`(head, topmenu, error_popup).
+
 | 시안 | 템플릿 | 바꿀 점 |
 |---|---|---|
-| index.html | index.html | 로그인 여부로 헤더 버튼 분기(`sec:authorize`) |
-| login.html | user/login.html | `th:action="@{/login}"`, name=`userid`/`passwd`, `?error` 메시지 |
-| signup.html | user/signup.html | 데모 코드 123456, `admin` 중복 데모 → `/api/users/check-id`, `/api/mail/*` |
-| mypage.html | user/mypage.html | 프로필·통계·포스트 목록을 모델로. 상태 배지 受付中/開封済み |
-| (없음) | user/edit.html | signup 폼 스타일 재사용 |
-| create.html (formArea) | post/create.html | 폼 POST `/post/new`. 테마 값은 hidden `theme` |
-| create.html (doneArea) | post/created.html | 링크 `https://{host}/post/{code}` |
-| decorate.html | post/decorate.html | 상단 테마 탭 삭제(포스트 테마 고정). 저장 → `PUT /api/posts/{code}/decorate` |
-| post.html | post/view.html | `?theme`, `?view=owner` 데모 파라미터 → 모델 값. 카드 모달 → `POST /api/posts/{code}/cards` |
-| cards.html | card/list.html | 본문은 서버 렌더링. 읽음/신고 ajax |
-| (없음) | post/edit.html | 이름·기념일·개봉일 + 삭제 모달 |
-| (없음) | admin/reports.html, admin/designs.html | `panel`, `btn` 클래스로 간단한 표 |
-| (없음) | error/403.html, error/404.html | 가운데 우체통 + 문구 |
+| index.html | index.html | 로그인 여부로 헤더 버튼 분기(`sec:authorize`, `Include/topmenu`) |
+| login.html | User/user_login.html | `th:action="@{/User/user_login}"`, name=`userid`/`passwd`, `?error` 메시지 |
+| signup.html | User/user_insert.html | 데모 코드 123456, `admin` 중복 데모 → `/User/user_idCheck`, `/User/user_mailSend`, `/User/user_mailCheck` |
+| mypage.html | User/user_mypage.html | 프로필·통계·포스트 목록(`pList`)을 모델로. 상태 배지 受付中/開封済み |
+| (없음) | User/user_modify.html | signup 폼 스타일 재사용. 프로필 / 비밀번호(`/User/user_passwd`) / 탈퇴(`/User/user_delete`) |
+| create.html (formArea) | Post/post_write.html | 폼 POST `/Post/post_write`. 테마 값은 hidden `theme` |
+| create.html (doneArea) | Post/post_created.html | 링크 `https://{host}/post/{code}` |
+| decorate.html | Post/post_decorate.html | 상단 테마 탭 삭제(포스트 테마 고정). 저장 → ajax `POST /Post/post_decorate` |
+| post.html | Post/post_view.html | `?theme`, `?view=owner` 데모 파라미터 → 모델 값. 카드 모달 → ajax `POST /Card/card_write` (10/19) |
+| cards.html | Card/card_list.html | (10/20) 본문은 서버 렌더링. 읽음/신고 ajax |
+| (없음) | Post/post_modify.html | 이름·기념일·개봉일 + 삭제 모달 |
+| (없음) | Admin/admin_reports.html, Admin/admin_designs.html | (10/21) `panel`, `btn` 클래스로 간단한 표 |
+| (없음) | error/403.html, error/404.html, error/error.html | 에러 팝업(`Include/error_popup`) |
 | screens.html | — | 발표용 목록. 프로젝트에는 넣지 않음 |
+
+> Windows 는 폴더 이름의 대소문자를 구분하지 않지만 EC2(Linux)와 jar 안에서는 구분한다. 템플릿 폴더는 반드시 `User/`, `Post/`, `Include/` 처럼 대문자로 시작하게 둔다.
 
 ## 테마 그림 사용법
 
