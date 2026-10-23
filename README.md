@@ -9,7 +9,11 @@
 
 **デモ**: http://43.200.133.12:8080/ （AWS EC2。HTTP のみ・停止している場合があります）
 
-![メイン画面](docs/images/index_shot.png)
+<p>
+  <img src="docs/images/screens/04_post_view.png" width="240" alt="ポスト画面">
+  <img src="docs/images/screens/05_card_modal.png" width="240" alt="カードを書く">
+  <img src="docs/images/screens/10_card_read.png" width="240" alt="カードを読む">
+</p>
 
 ## 主な機能
 
@@ -43,6 +47,26 @@
 - **2GB メモリでの運用**: Oracle XE のメモリ（SGA 640MB）・JVM ヒープ（512MB）・スワップを調整して、t3.small 1 台にアプリと DB を同居させた
 
 ## 画面
+
+スマートフォン（幅 375px）で表示した画面です。
+
+| メイン | 新規登録 | ポストをつくる | ポストをかざる |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/images/screens/01_index.png" width="180"> | <img src="docs/images/screens/02_signup.png" width="180"> | <img src="docs/images/screens/03_post_write.png" width="180"> | <img src="docs/images/screens/06_post_decorate.png" width="180"> |
+
+| ポスト（お正月） | カードを書く | ポスト（クリスマス） | マイページ |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/images/screens/04_post_view.png" width="180"> | <img src="docs/images/screens/05_card_modal.png" width="180"> | <img src="docs/images/screens/07_post_christmas.png" width="180"> | <img src="docs/images/screens/08_mypage.png" width="180"> |
+
+| カード一覧（開封後） | カードを読む |
+|:---:|:---:|
+| <img src="docs/images/screens/09_card_list.png" width="180"> | <img src="docs/images/screens/10_card_read.png" width="180"> |
+
+管理者画面（PC）
+
+<img src="docs/images/screens/11_admin_reports.png" width="480"> <img src="docs/images/screens/12_admin_designs.png" width="480">
+
+### URL 一覧
 
 | URL | 画面 |
 |---|---|
