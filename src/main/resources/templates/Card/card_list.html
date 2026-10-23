@@ -5,6 +5,9 @@
     .head { text-align: center; padding: 8px 0 20px; }
     .head h1 { margin: 10px 0 4px; font-size: 26px; }
     .head p { margin: 0; }
+    /* 배경 그림(가랜드·눈 등)과 겹쳐도 글자가 읽히도록 배경색 바탕을 깐다 */
+    .head p { font-size: 14px; }
+    .head h1, .head p { width: fit-content; margin-left: auto; margin-right: auto; padding: 0 6px; border-radius: 10px; background: color-mix(in srgb, var(--bg) 90%, transparent); }
     .card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .card-btn {
       position: relative; aspect-ratio: 4 / 3; border-radius: 12px; border: none; cursor: pointer; padding: 12px;

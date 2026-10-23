@@ -8,11 +8,16 @@
     .titles { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 8px; text-align: center; }
     .titles h1 { margin: 4px 0 0; font-size: 26px; }
     .titles p { margin: 0; font-size: 14px; }
+    /* 배경 그림(가랜드·눈 등)과 겹쳐도 글자가 읽히도록 배경색 바탕을 깐다 */
+    .titles h1, .titles p { padding: 0 10px; border-radius: 10px; background: color-mix(in srgb, var(--bg) 90%, transparent); }
     .mailbox-area .post { margin-left: 60px; }
     .actions { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; }
     .count { margin: 0; text-align: center; font-size: 14px; }
     .closed { margin: 0; text-align: center; color: var(--sub); font-size: 14px; }
     .counter { text-align: right; }
+    /* 테두리만 있는 버튼은 배경 그림(クリスマス 의 눈 등) 위에서 글자가 사라지지 않도록 배경색을 채운다 */
+    .actions .btn:not(.btn-primary) { background: var(--bg); }
+    .actions .btn:not(.btn-primary):hover { background: var(--ink); color: var(--bg); }
   </style>
 </head>
 <!--/* 카드 본문은 이 화면에 절대 넣지 않는다 (봉투 = 보낸 이름 + 디자인) */-->
